@@ -60,6 +60,7 @@ public class JEIPlugin implements IModPlugin {
         // the 1.21 standalone AE2JEIIntegration mod does not exist for 1.20.1, so this
         // plugin class is itself proof that JEI is loaded.
         AE2JeiIntegrationCompat.registerConverter();
+        com.moakiee.ae2lt.client.compat.JeiWirelessSupplyClient.registerTickListener();
     }
 
     @Override
@@ -203,9 +204,9 @@ public class JEIPlugin implements IModPlugin {
                 com.moakiee.ae2lt.menu.TianshuCraftingTermMenu.class, com.moakiee.ae2lt.menu.TianshuCraftingTermMenu.TYPE,
                 registration.getTransferHelper()));
         if (ModList.get().isLoaded("ae2wtlib")) {
-        registration.addUniversalRecipeTransferHandler(new TianshuCraftingTransferHandler<>(
-                com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.class, com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.TYPE,
-                registration.getTransferHelper()));
+            registration.addUniversalRecipeTransferHandler(new TianshuCraftingTransferHandler<>(
+                    com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.class, com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.TYPE,
+                    registration.getTransferHelper()));
             // JEI matches the concrete menu class, not its superclass. The enhanced host shares
             // the base wireless MenuType; its exact class is sufficient for this registration.
             registration.addUniversalRecipeTransferHandler(new TianshuCraftingTransferHandler<>(
@@ -214,7 +215,7 @@ public class JEIPlugin implements IModPlugin {
         }
         var helper = registration.getTransferHelper();
         registration.addRecipeTransferHandler(new UseCraftingRecipeTransfer<>(
-                PigmeeSynthesisStationMenu.class, PigmeeSynthesisStationMenu.TYPE, helper),
+                        PigmeeSynthesisStationMenu.class, PigmeeSynthesisStationMenu.TYPE, helper),
                 mezz.jei.api.constants.RecipeTypes.CRAFTING);
         registration.addUniversalRecipeTransferHandler(new UniversalEncodePatternTransferHandler<>(
                 TianshuPatternEncodingTermMenu.TYPE,

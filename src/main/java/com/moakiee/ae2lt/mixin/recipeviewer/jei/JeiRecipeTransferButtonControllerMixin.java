@@ -4,11 +4,14 @@ import com.moakiee.ae2lt.client.compat.JeiRecipeTransferMetadata;
 import com.moakiee.ae2lt.client.tianshu.TianshuDirectUploadClient;
 import com.moakiee.ae2lt.menu.TianshuPatternEncodingTermMenu;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
-import mezz.jei.gui.input.UserInput;
+import mezz.jei.common.input.UserInput;
 import mezz.jei.gui.recipes.RecipeTransferButton;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import java.util.function.Supplier;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -25,11 +28,17 @@ public abstract class JeiRecipeTransferButtonControllerMixin {
     @Accessor("recipeLayout")
     protected abstract IRecipeLayoutDrawable<?> ae2lt$getRecipeLayout();
 
-    @Accessor("parentContainer")
-    protected abstract AbstractContainerMenu ae2lt$getParentContainer();
+    @Accessor("parentScreenSupplier")
+    protected abstract Supplier<AbstractContainerScreen<?>> ae2lt$getParentScreenSupplier();
+
+    @Unique
+    private AbstractContainerMenu ae2lt$getParentContainer() {
+        var screen = ae2lt$getParentScreenSupplier().get();
+        return screen == null ? null : screen.getMenu();
+    }
 
     @Inject(
-            method = "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
             at = @At("HEAD"),
             require = 0)
     private void ae2lt$beginRecipeTransferMetadata(
@@ -43,7 +52,7 @@ public abstract class JeiRecipeTransferButtonControllerMixin {
     }
 
     @Inject(
-            method = "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
             at = @At("RETURN"),
             require = 0)
     private void ae2lt$clearRecipeTransferMetadata(
@@ -52,7 +61,7 @@ public abstract class JeiRecipeTransferButtonControllerMixin {
     }
 
     @Redirect(
-            method = "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/lang/Runnable;run()V"),
@@ -64,7 +73,8 @@ public abstract class JeiRecipeTransferButtonControllerMixin {
         // pending-direct-upload request. Do not sample the physical modifier again here: JEI
         // may run this close callback after its input state has advanced, which would close the
         // recipe page even though the direct upload is already armed.
-        if (menu instanceof TianshuPatternEncodingTermMenu tianshuMenu
+        if (recipeScreen instanceof mezz.jei.gui.recipes.RecipesGui
+                && menu instanceof TianshuPatternEncodingTermMenu tianshuMenu
                 && TianshuDirectUploadClient.holdRecipeScreen(tianshuMenu, recipeScreen)) {
             return;
         }
