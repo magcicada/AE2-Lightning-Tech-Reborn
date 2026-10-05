@@ -14,6 +14,8 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 
 public class LightningJeiIngredientRenderer implements IIngredientRenderer<LightningKey> {
     @Override
@@ -33,12 +35,22 @@ public class LightningJeiIngredientRenderer implements IIngredientRenderer<Light
     @SuppressWarnings("removal") // JEI 15.20 still declares this deprecated method abstract.
     @Override
     public List<Component> getTooltip(LightningKey ingredient, TooltipFlag tooltipFlag) {
-        return AEKeyRendering.getTooltip(ingredient);
+        return getJeiTooltip(ingredient);
     }
 
     @Override
     public void getTooltip(ITooltipBuilder tooltip, LightningKey ingredient, TooltipFlag tooltipFlag) {
         tooltip.addAll(getJeiTooltip(ingredient));
+    }
+
+    @Override
+    public List<Component> getTooltip(LightningKey ingredient, @Nullable Player player, TooltipFlag tooltipFlag) {
+        return getJeiTooltip(ingredient);
+    }
+
+    @Override
+    public void getTooltip(ITooltipBuilder tooltip, LightningKey ingredient, @Nullable Player player, TooltipFlag tooltipFlag) {
+        tooltip.addAll(getTooltip(ingredient, player, tooltipFlag));
     }
 
     @Override

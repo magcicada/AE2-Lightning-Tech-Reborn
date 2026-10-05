@@ -34,6 +34,7 @@ public final class JeiWirelessSupplyClient {
     @FunctionalInterface
     public interface NativeTransfer {
         @Nullable IRecipeTransferError transfer(boolean maximum, boolean doTransfer);
+        default void reject() {}
     }
     private record Key(Object recipe, Object handler) {}
     private static final class Offer {
@@ -53,11 +54,25 @@ public final class JeiWirelessSupplyClient {
     private static Pending pending;
     private static int sequence;
     private JeiWirelessSupplyClient() {}
+    private static boolean tickListenerRegistered;
+    public static void registerTickListener() {
+        if (!tickListenerRegistered) {
+            tickListenerRegistered = true;
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(JeiWirelessSupplyClient::onClientTick);
+        }
+    }
+    private static void onClientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || pending == null) return;
+        var minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || minecraft.player.containerMenu != pending.menu()
+                || minecraft.screen != pending.screen() || !AE2LTClientConfig.jeiWirelessSupply()
+                || Util.getMillis() - pending.offer().requestedAt > 5000) clear();
+    }
 
     @Nullable
     public static IRecipeTransferError transfer(IRecipeTransferHandler<AbstractContainerMenu, Object> handler,
-            AbstractContainerMenu menu, Object recipe, IRecipeSlotsView slots, Player player,
-            boolean maximum, boolean doTransfer, NativeTransfer nativeTransfer) {
+                                                AbstractContainerMenu menu, Object recipe, IRecipeSlotsView slots, Player player,
+                                                boolean maximum, boolean doTransfer, NativeTransfer nativeTransfer) {
         if (!AE2LTClientConfig.jeiWirelessSupply() || menu instanceof MEStorageMenu || menu == player.inventoryMenu
                 || menu != player.containerMenu || TianshuWirelessIngredientSource.locate(player).isEmpty()) {
             return nativeTransfer.transfer(maximum, doTransfer);
@@ -69,7 +84,10 @@ public final class JeiWirelessSupplyClient {
             return doTransfer ? nativeTransfer.transfer(false, true) : nativeError;
         }
         if (currentMenu != menu) { clear(); currentMenu = menu; }
-        if (pending != null && Util.getMillis() - pending.offer().requestedAt > 5000) pending = null;
+        if (pending != null && Util.getMillis() - pending.offer().requestedAt > 5000) {
+            pending.nativeTransfer().reject();
+            pending = null;
+        }
         if (pending != null && doTransfer) return hint(false, "waiting");
 
         var key = new Key(recipe, handler);
@@ -144,9 +162,9 @@ public final class JeiWirelessSupplyClient {
             var candidates = operation.offer().items.stream()
                     .filter(offer -> input.getItemStacks().anyMatch(s -> equivalent(s, offer)))
                     .sorted(java.util.Comparator.<ItemStack>comparingInt(offer ->
-                            result.stream().anyMatch(s -> ItemStack.isSameItemSameTags(s, offer)) ? 0
-                            : operation.player().getInventory().items.stream()
-                                    .anyMatch(s -> ItemStack.isSameItemSameTags(s, offer)) ? 1 : 2)
+                                    result.stream().anyMatch(s -> ItemStack.isSameItemSameTags(s, offer)) ? 0
+                                            : operation.player().getInventory().items.stream()
+                                            .anyMatch(s -> ItemStack.isSameItemSameTags(s, offer)) ? 1 : 2)
                             .thenComparing(java.util.Comparator.comparingInt(ItemStack::getCount).reversed())).toList();
             for (var offered : candidates) {
                 int needed = Math.min(required, input.getItemStacks().filter(s -> equivalent(s, offered))
@@ -261,9 +279,11 @@ public final class JeiWirelessSupplyClient {
     }
 
     public static void receive(WirelessJeiSupplyResultPacket packet) {
+        var operation = pending;
         try {
             applyResult(packet);
         } catch (RuntimeException error) {
+            if (operation != null) operation.nativeTransfer().reject();
             com.mojang.logging.LogUtils.getLogger().warn("Existing JEI handler failed after wireless refill", error);
             clear();
             var player = Minecraft.getInstance().player;
@@ -281,7 +301,7 @@ public final class JeiWirelessSupplyClient {
         var operation = pending;
         if (operation == null || operation.offer().id != packet.requestId()) return;
         pending = null;
-        if (minecraft.screen != operation.screen()) return;
+        if (minecraft.screen != operation.screen()) { operation.nativeTransfer().reject(); return; }
         if (!operation.taking() && packet.status() == 1) {
             var materials = plan(operation);
             if (!materials.isEmpty()) { beginTake(operation, materials); return; }
@@ -294,11 +314,18 @@ public final class JeiWirelessSupplyClient {
                 return;
             }
         }
+        operation.nativeTransfer().reject();
         OFFERS.clear();
         minecraft.player.displayClientMessage(Component.translatable("ae2lt.tianshu.jei_supply.retry"), true);
     }
 
-    public static void clear() { OFFERS.clear(); pending = null; currentMenu = null; }
+    public static boolean isPending(NativeTransfer transfer) {
+        return pending != null && pending.nativeTransfer() == transfer;
+    }
+    public static void clear() {
+        if (pending != null) pending.nativeTransfer().reject();
+        OFFERS.clear(); pending = null; currentMenu = null;
+    }
     private static boolean allows(@Nullable IRecipeTransferError error) { return error == null || error.getType().allowsTransfer; }
     private static IRecipeTransferError hint(boolean allowed, String message) {
         return new IRecipeTransferError() {

@@ -4,10 +4,14 @@ import com.moakiee.ae2lt.client.compat.JeiRecipeTransferMetadata;
 import com.moakiee.ae2lt.client.tianshu.TianshuDirectUploadClient;
 import com.moakiee.ae2lt.menu.TianshuPatternEncodingTermMenu;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
+import mezz.jei.common.input.UserInput;
 import mezz.jei.gui.recipes.RecipeTransferButton;
-import mezz.jei.gui.recipes.RecipesGui;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import java.util.function.Supplier;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -24,54 +28,53 @@ public abstract class JeiRecipeTransferButtonControllerMixin {
     @Accessor("recipeLayout")
     protected abstract IRecipeLayoutDrawable<?> ae2lt$getRecipeLayout();
 
-    @Inject(
-            method = {
-                    "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
-                    "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z"
-            },
-            at = {@At("HEAD"), @At("RETURN")},
-            require = 1)
-    private void ae2lt$clearRecipeTransferMetadata(CallbackInfoReturnable<Boolean> cir) {
-        JeiRecipeTransferMetadata.clear();
+    @Accessor("parentScreenSupplier")
+    protected abstract Supplier<AbstractContainerScreen<?>> ae2lt$getParentScreenSupplier();
+
+    @Unique
+    private AbstractContainerMenu ae2lt$getParentContainer() {
+        var screen = ae2lt$getParentScreenSupplier().get();
+        return screen == null ? null : screen.getMenu();
     }
 
-    // JEI 15 moved UserInput and replaced parentContainer with a screen supplier. The layout
-    // is read only after simulated clicks and missing transfer targets have been rejected.
     @Inject(
-            method = {
-                    "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
-                    "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z"
-            },
-            at = @At(value = "FIELD",
-                    target = "Lmezz/jei/gui/recipes/RecipeTransferButton;recipeLayout:Lmezz/jei/api/gui/IRecipeLayoutDrawable;"),
-            require = 1)
-    private void ae2lt$beginRecipeTransferMetadata(CallbackInfoReturnable<Boolean> cir) {
-        var player = Minecraft.getInstance().player;
-        if (player != null && player.containerMenu instanceof TianshuPatternEncodingTermMenu tianshuMenu) {
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
+            at = @At("HEAD"),
+            require = 0)
+    private void ae2lt$beginRecipeTransferMetadata(
+            UserInput input, CallbackInfoReturnable<Boolean> cir) {
+        JeiRecipeTransferMetadata.clear();
+        if (input == null || input.isSimulate()) return;
+        var menu = ae2lt$getParentContainer();
+        if (menu instanceof TianshuPatternEncodingTermMenu tianshuMenu) {
             JeiRecipeTransferMetadata.begin(tianshuMenu, ae2lt$getRecipeLayout());
         }
     }
 
+    @Inject(
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
+            at = @At("RETURN"),
+            require = 0)
+    private void ae2lt$clearRecipeTransferMetadata(
+            UserInput input, CallbackInfoReturnable<Boolean> cir) {
+        JeiRecipeTransferMetadata.clear();
+    }
+
     @Redirect(
-            method = {
-                    "onMouseClicked(Lmezz/jei/gui/input/UserInput;)Z",
-                    "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z"
-            },
+            method = "onMouseClicked(Lmezz/jei/common/input/UserInput;)Z",
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/lang/Runnable;run()V"),
-            require = 1)
+            require = 0)
     private void ae2lt$keepRecipePageForDirectUpload(Runnable onClose) {
-        var player = Minecraft.getInstance().player;
+        var menu = ae2lt$getParentContainer();
         var recipeScreen = Minecraft.getInstance().screen;
         // The successful transfer handler has already converted Alt into an authoritative
         // pending-direct-upload request. Do not sample the physical modifier again here: JEI
         // may run this close callback after its input state has advanced, which would close the
         // recipe page even though the direct upload is already armed.
-        // Pinned recipes have their own success callback, which must still run.
-        if (recipeScreen instanceof RecipesGui
-                && player != null
-                && player.containerMenu instanceof TianshuPatternEncodingTermMenu tianshuMenu
+        if (recipeScreen instanceof mezz.jei.gui.recipes.RecipesGui
+                && menu instanceof TianshuPatternEncodingTermMenu tianshuMenu
                 && TianshuDirectUploadClient.holdRecipeScreen(tianshuMenu, recipeScreen)) {
             return;
         }

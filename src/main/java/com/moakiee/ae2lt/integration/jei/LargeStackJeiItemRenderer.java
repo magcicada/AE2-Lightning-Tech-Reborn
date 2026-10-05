@@ -8,6 +8,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import org.jetbrains.annotations.Nullable;
 
 import com.moakiee.ae2lt.client.gui.LargeStackCountRenderer;
 
@@ -51,6 +53,16 @@ public class LargeStackJeiItemRenderer implements IIngredientRenderer<ItemStack>
     @Override
     public void getTooltip(ITooltipBuilder tooltip, ItemStack ingredient, TooltipFlag tooltipFlag) {
         tooltip.addAll(ingredient.getTooltipLines(Minecraft.getInstance().player, tooltipFlag));
+    }
+
+    @Override
+    public List<Component> getTooltip(ItemStack ingredient, @Nullable Player player, TooltipFlag tooltipFlag) {
+        return ingredient.getTooltipLines(player, tooltipFlag);
+    }
+
+    @Override
+    public void getTooltip(ITooltipBuilder tooltip, ItemStack ingredient, @Nullable Player player, TooltipFlag tooltipFlag) {
+        tooltip.addAll(getTooltip(ingredient, player, tooltipFlag));
     }
 
     @Override
