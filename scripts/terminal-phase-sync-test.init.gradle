@@ -1,12 +1,11 @@
-// Native Forge cell synchronization, creative recovery, fluid movement and workstation regressions.
+// Native Forge creative recovery and phase flight/lock regressions.
 allprojects {
     afterEvaluate {
-        sourceSets.jdb.java.setIncludes(['**/TianshuCraftingGameTests.java', '**/TianshuCellScrollFixture.java',
-                '**/TianshuWirelessGameTestChecks.java', '**/PhaseLockCreativeRecoveryGameTests.java',
+        sourceSets.jdb.java.setIncludes(['**/PhaseLockCreativeRecoveryGameTests.java',
                 '**/PhaseFlightAndLockGameTests.java', '**/PhaseFlightGroundCrouchGameTests.java'])
         minecraft.runs.gameTestServer {
             workingDirectory project.file('build/terminal-phase-sync-forge')
-            property 'forge.enabledGameTestNamespaces', 'ae2lt,ae2lt_workstation,ae2lt_phase,ae2lt_phase_lock,ae2lt_mining'
+            property 'forge.enabledGameTestNamespaces', 'ae2lt,ae2lt_phase,ae2lt_phase_lock,ae2lt_mining'
             mods { ae2lt { source sourceSets.jdb } }
         }
     }

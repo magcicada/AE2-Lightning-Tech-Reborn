@@ -104,7 +104,8 @@ minecraft {
 
         wirelessIoGameTestServer {
             parent runs.gameTestServer
-            workingDirectory project.file('run-wireless-io-gametest')
+            workingDirectory project.file(providers.gradleProperty('ae2ltBenchmarkRunDirectory')
+                    .getOrElse('run-wireless-io-gametest'))
             // Isolate measurement fixtures from existing Forge gameplay tests.
             property 'forge.enabledGameTestNamespaces', 'ae2lt_io'
             property 'ae2lt.wirelessIoBenchmark', 'true'
@@ -123,7 +124,7 @@ minecraft {
         interfaceIoGameTestServer {
             parent runs.gameTestServer
             workingDirectory project.file('run-gametest/interface-io')
-            property 'forge.enabledGameTestNamespaces', "${mod_id},minecraft,ae2lt_io"
+            property 'forge.enabledGameTestNamespaces', "${mod_id},minecraft,ae2lt_io,ae2lt_interface_input"
             mods { "${mod_id}" { source sourceSets.jdb } }
         }
 

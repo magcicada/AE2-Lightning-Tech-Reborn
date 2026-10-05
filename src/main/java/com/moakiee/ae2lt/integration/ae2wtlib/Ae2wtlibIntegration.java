@@ -26,8 +26,6 @@ public final class Ae2wtlibIntegration {
     public static final String TIANSHU_TERMINAL_DESCRIPTION_ID =
             "item.ae2lt.wireless_tianshu_pattern_encoding_terminal";
 
-    public static final String TIANSHU_CRAFTING_NAME = "tianshu_crafting";
-    private static com.moakiee.ae2lt.item.TianshuWirelessCraftingTerminalItem craftingTerminal;
     private static TianshuWTItem tianshuTerminal;
     private static boolean terminalRegistrationRequested;
 
@@ -44,11 +42,6 @@ public final class Ae2wtlibIntegration {
             tianshuTerminal = new TianshuWTItem();
         }
         return tianshuTerminal;
-    }
-
-    public static synchronized com.moakiee.ae2lt.item.TianshuWirelessCraftingTerminalItem craftingTerminal() {
-        if (craftingTerminal == null) craftingTerminal = new com.moakiee.ae2lt.item.TianshuWirelessCraftingTerminalItem();
-        return craftingTerminal;
     }
 
     /**
@@ -73,10 +66,6 @@ public final class Ae2wtlibIntegration {
                 TianshuWirelessPatternEncodingTermMenu.TYPE,
                 terminal(),
                 TIANSHU_TERMINAL_DESCRIPTION_ID);
-        WUTHandler.addTerminal(TIANSHU_CRAFTING_NAME, craftingTerminal()::tryOpen,
-                com.moakiee.ae2lt.logic.tianshu.terminal.TianshuWirelessCraftingTermMenuHost::new,
-                com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.TYPE, craftingTerminal(),
-                "item.ae2lt.wireless_tianshu_crafting_terminal");
         terminalRegistrationRequested = true;
     }
 
@@ -85,13 +74,11 @@ public final class Ae2wtlibIntegration {
      * Only call when ae2wtlib is present.
      */
     public static void verifyTerminalRegistration() {
-        for (var name : java.util.List.of(TIANSHU_TERMINAL_NAME, TIANSHU_CRAFTING_NAME)) {
-            var definition = WUTHandler.wirelessTerminals.get(name);
-            var expected = name.equals(TIANSHU_TERMINAL_NAME)
-                    ? ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get()
-                    : ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get();
-            if (definition == null || !WUTHandler.terminalNames.contains(name) || definition.item() != expected)
-                throw new IllegalStateException("AE2WTLib did not register Tianshu terminal " + name);
+        var definition = WUTHandler.wirelessTerminals.get(TIANSHU_TERMINAL_NAME);
+        var expected = ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get();
+        if (definition == null || !WUTHandler.terminalNames.contains(TIANSHU_TERMINAL_NAME)
+                || definition.item() != expected) {
+            throw new IllegalStateException("AE2WTLib did not register Tianshu terminal " + TIANSHU_TERMINAL_NAME);
         }
     }
 
@@ -104,11 +91,8 @@ public final class Ae2wtlibIntegration {
     public static void register() {
         UpgradeHelper.addUpgradeToAllTerminals(ModItems.OVERLOADED_FREQUENCY_CARD.get(), 1);
         // WTLib's initial sweep can precede our item-registry callback on Forge.
-        for (var terminal : java.util.List.of(ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get(),
-                ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get())) {
-            appeng.api.upgrades.Upgrades.add(de.mari_023.ae2wtlib.AE2wtlib.QUANTUM_BRIDGE_CARD, terminal, 1);
-            appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.ENERGY_CARD, terminal, 2);
-        }
-        if (net.minecraftforge.fml.ModList.get().isLoaded("ae2wtlib")) TianshuWctIntegration.registerUpgrades();
+        var terminal = ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get();
+        appeng.api.upgrades.Upgrades.add(de.mari_023.ae2wtlib.AE2wtlib.QUANTUM_BRIDGE_CARD, terminal, 1);
+        appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.ENERGY_CARD, terminal, 2);
     }
 }

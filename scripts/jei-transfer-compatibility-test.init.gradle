@@ -1,0 +1,26 @@
+// JAVA_HOME=<Java 17> ./gradlew -I scripts/jei-transfer-compatibility-test.init.gradle runClient -Pjei_version=<version>
+allprojects {
+    afterEvaluate {
+        sourceSets.jdb.java.setIncludes(['**/JeiTransferCompatibilityClientProbe.java'])
+        configurations.runtimeOnly.dependencies.removeIf { dep ->
+            !(dep.group in ['com.moakiee.thunderbolt', 'appeng', 'org.appliedenergistics', 'mezz.jei'])
+        }
+        def probeDir = project.layout.buildDirectory.dir('jei-transfer-client-' + project.jei_version).get().asFile
+        minecraft.runs.client {
+            workingDirectory probeDir
+            jvmArgs '-Xverify:all'
+            property 'ae2lt.jeiTransferCompatibilityProbe', 'true'
+            property 'mixin.debug.export', 'true'
+            property 'forge.logging.console.level', 'info'
+            mods { "${project.mod_id}" { source sourceSets.jdb } }
+        }
+        tasks.matching { it.name == 'runClient' }.configureEach {
+            doFirst { new File(probeDir, 'jei-transfer-result.txt').delete() }
+            doLast {
+                def result = new File(probeDir, 'jei-transfer-result.txt')
+                if (!result.isFile() || result.text.trim() != 'PASS')
+                    throw new GradleException('JEI transfer probe failed: ' + (result.isFile() ? result.text : 'no result'))
+            }
+        }
+    }
+}

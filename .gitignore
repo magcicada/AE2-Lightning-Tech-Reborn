@@ -33,6 +33,9 @@ run2/
 .docs/
 archive/
 docs/
+!docs/
+docs/*
+!docs/pr-12-review.md
 .claude/
 CLAUDE.local.md
 else/
@@ -48,6 +51,7 @@ desktop.ini
 # Logs
 *.log
 logs/
+scripts/__pycache__/
 
 # Runtime / temporary files
 tmp/

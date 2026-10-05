@@ -12,8 +12,8 @@ final class OverloadedIoCost {
             return 0.0;
         }
         long perOperation = Math.max(1L, amountPerOperation);
-        // Java 17 has no Math.ceilDiv; equivalent ceiling division for positive divisor.
-        return (amount + perOperation - 1L) / perOperation;
+        // Positive ceiling division without overflowing an unlimited request.
+        return 1L + (amount - 1L) / perOperation;
     }
 
     static long amountForOperations(long requested, long amountPerOperation, long operations) {

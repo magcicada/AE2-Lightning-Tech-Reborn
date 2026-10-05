@@ -62,11 +62,11 @@ public final class JeiWirelessSupplyGameTests {
         cellStorage.persist();
         ((DriveBlockEntity) level.getBlockEntity(base.east())).getInternalInventory().setItemDirect(0, cell);
         player.setPos(table.getX() + .5, table.getY() + 1, table.getZ() + .5);
-        var terminal = new ItemStack(ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get());
+        var terminal = new ItemStack(ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get());
         terminal.getOrCreateTag().put("accessPoint", GlobalPos.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, GlobalPos.of(level.dimension(), wap)).result().orElseThrow());
         terminal.getOrCreateTag().putDouble("internalCurrentPower", 1000000.0);
         // An unlinked earlier terminal must not hide the connected one.
-        player.getInventory().setItem(0, new ItemStack(ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get()));
+        player.getInventory().setItem(0, new ItemStack(ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get()));
         player.getInventory().setItem(1, terminal);
         var menu = new CraftingMenu(17, player.getInventory(), ContainerLevelAccess.create(level, table));
         player.containerMenu = menu;
@@ -147,7 +147,7 @@ public final class JeiWirelessSupplyGameTests {
             var simulation = WirelessJeiInventoryPlan.insert(player.getInventory().items, List.of(materials));
             check(simulation != null && count(player) == 0 && java.util.stream.IntStream.range(0, 36)
                     .allMatch(i -> ItemStack.matches(before.get(i), player.getInventory().getItem(i))), "simulation stays detached");
-            System.out.println("JEI_WIRELESS_SUPPLY_PASS real ME extraction, native JEI crafting, energy, replay, components, space, power, link, menu, stock, Curios, both terminals, simulation");
+            System.out.println("JEI_WIRELESS_SUPPLY_PASS real ME extraction, native JEI crafting, energy, replay, components, space, power, link, menu, stock, Curios, pattern terminal, simulation");
             player.containerMenu = player.inventoryMenu;
             helper.succeed();
         });
@@ -156,7 +156,7 @@ public final class JeiWirelessSupplyGameTests {
     private static final class Universal {
         private static void checkSupply(ServerPlayer player, ItemStack terminal, ItemStack materials) {
             var universal = new ItemStack(de.mari_023.ae2wtlib.AE2wtlib.UNIVERSAL_TERMINAL);
-            universal.getOrCreateTag().putBoolean(com.moakiee.ae2lt.integration.ae2wtlib.Ae2wtlibIntegration.TIANSHU_CRAFTING_NAME, true);
+            universal.getOrCreateTag().putBoolean(com.moakiee.ae2lt.integration.ae2wtlib.Ae2wtlibIntegration.TIANSHU_TERMINAL_NAME, true);
             universal.getOrCreateTag().putDouble("internalCurrentPower", terminal.getOrCreateTag().getDouble("internalCurrentPower"));
             universal.getOrCreateTag().put("accessPoint", terminal.getOrCreateTag().get("accessPoint").copy());
             player.getInventory().setItem(1, universal);

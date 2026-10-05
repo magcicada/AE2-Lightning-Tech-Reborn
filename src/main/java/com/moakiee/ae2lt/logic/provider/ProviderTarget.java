@@ -433,6 +433,12 @@ public class ProviderTarget extends TargetAddress {
             boolean preserveBatchHistoryOnRejection,
             BooleanSupplier blocked,
             IntFunction<BatchChunk> pushChunk) {
+        var pendingState = runtime.batchSteps.get(pattern);
+        boolean preferReservoirTransaction = pendingState != null
+                && pendingState.preferReservoirTransaction;
+        if (pendingState != null) {
+            pendingState.preferReservoirTransaction = false;
+        }
         if (maxCopies <= 0L || blocked.getAsBoolean()) {
             return BatchStepResult.EMPTY;
         }
@@ -449,7 +455,18 @@ public class ProviderTarget extends TargetAddress {
         state.lastAttemptTick = gameTick;
 
         BatchStepResult result;
-        if (!state.backingOff) {
+        int provenTransaction = state.reservoirMode && state.reservoirTailLower > 0
+                ? (int) Math.min(Integer.MAX_VALUE,
+                        2L * state.provenChunk + state.reservoirTailLower)
+                : 0;
+        if (preferReservoirTransaction && provenTransaction > 0
+                && maxCopies >= provenTransaction) {
+            var chunk = pushChunk.apply(provenTransaction);
+            if (chunk.ownedCopies() > 0L) {
+                state.lastSuccessfulTick = gameTick;
+            }
+            result = BatchStepResult.from(chunk, provenTransaction, false);
+        } else if (!state.backingOff) {
             result = state.reservoirMode
                     ? pushReservoirRamp(state, maxCopies, gameTick,
                             preserveBatchHistoryOnRejection, blocked, pushChunk)
@@ -467,6 +484,25 @@ public class ProviderTarget extends TargetAddress {
             runtime.batchHistoryDirty = true;
         }
         return result;
+    }
+
+    final int provenReservoirTransaction(IPatternDetails pattern, long gameTick) {
+        var state = runtime.batchSteps.get(pattern);
+        if (state == null) {
+            return 0;
+        }
+        runtime.batchHistoryDirty |= state.expireIfIdle(gameTick, true);
+        return state.reservoirMode && state.reservoirTailLower > 0
+                ? (int) Math.min(Integer.MAX_VALUE,
+                        2L * state.provenChunk + state.reservoirTailLower)
+                : 0;
+    }
+
+    final void preferReservoirTransaction(IPatternDetails pattern, boolean prefer) {
+        var state = runtime.batchSteps.get(pattern);
+        if (state != null) {
+            state.preferReservoirTransaction = prefer;
+        }
     }
 
     private static BatchStepResult pushBackoffStep(
@@ -1151,6 +1187,7 @@ public class ProviderTarget extends TargetAddress {
         private boolean growthCapped;
         private boolean backingOff;
         private boolean reservoirMode;
+        private boolean preferReservoirTransaction;
         private int reservoirTailLower;
         private int reservoirTailUpperExclusive;
         private boolean reservoirTailSuppressed;

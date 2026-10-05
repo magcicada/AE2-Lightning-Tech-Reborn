@@ -1,0 +1,12 @@
+// JAVA_HOME=<Java 17> ./gradlew -I scripts/jei-wireless-supply-test.init.gradle runGameTestServer
+allprojects {
+    afterEvaluate {
+        sourceSets.jdb.java.setIncludes([
+                '**/JeiWirelessSupplyGameTests.java'])
+        minecraft.runs.gameTestServer {
+            property 'forge.enabledGameTestNamespaces', 'ae2lt_jei_supply'
+            workingDirectory project.file('build/jei-wireless-supply-forge')
+            mods { ae2lt { source sourceSets.jdb } }
+        }
+    }
+}

@@ -7,7 +7,8 @@ Reference: main `5e12a0d` (final state), applied on the existing Forge port.
 - Provider cache/dispatch ownership fixes, live input allocation, closed-loop seed handling and manual Tianshu CPU selection across CPU-list changes.
 - Machine energy recharge batching, standalone main-core compute budgets, updated multiblock recipes, tooltips and guides.
 - Arbitrary-precision storage/crafting integration using Thunderbolt 2.0.0, with bounded Forge SimpleChannel messages and extensions to the existing AE2 menus.
-- Useless batch integration and guarded NeoECO integration. Forge NeoECO 20.3.0 lacks the allocated FastPath facade: ordinary dispatch remains active. The adapter links reflectively only when the complete public allocated API exists; no NeoForge dependency is required.
+- Guarded NeoECO integration. Forge NeoECO 20.3.0 lacks the allocated FastPath facade: ordinary dispatch remains active. The adapter links reflectively only when the complete public allocated API exists; no NeoForge dependency is required.
+- Official Useless 1.20.1 lacks the BigInteger and Smart Doubling APIs. The inactive Thunderbolt adapters and the corresponding LT protocol probe were removed after the 2026-10-04 source audit; ordinary machine execution remains in use.
 
 ## Intentionally deferred
 

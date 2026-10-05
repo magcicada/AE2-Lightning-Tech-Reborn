@@ -299,17 +299,7 @@ public final class ModItems {
 
     static {
         PartModels.registerModels(PartModelsHelper.createModels(TianshuPatternEncodingTerminalPart.class));
-        PartModels.registerModels(PartModelsHelper.createModels(com.moakiee.ae2lt.part.TianshuCraftingTerminalPart.class));
     }
-
-    public static final RegistryObject<PartItem<com.moakiee.ae2lt.part.TianshuCraftingTerminalPart>> TIANSHU_CRAFTING_TERMINAL =
-            ITEMS.register("tianshu_crafting_terminal", () -> new PartItem<>(new Item.Properties(),
-                    com.moakiee.ae2lt.part.TianshuCraftingTerminalPart.class,
-                    com.moakiee.ae2lt.part.TianshuCraftingTerminalPart::new));
-
-    public static final RegistryObject<Item> TIANSHU_WIRELESS_CRAFTING_TERMINAL = TianshuWirelessTerminalFactory.isAvailable()
-            ? ITEMS.register("wireless_tianshu_crafting_terminal", TianshuWirelessTerminalFactory::createCrafting)
-            : RegistryObject.create(new ResourceLocation(AE2LightningTech.MODID, "wireless_tianshu_crafting_terminal"), ForgeRegistries.ITEMS);
 
     public static final RegistryObject<PartItem<TianshuPatternEncodingTerminalPart>> TIANSHU_PATTERN_ENCODING_TERMINAL =
             ITEMS.register("tianshu_pattern_encoding_terminal",

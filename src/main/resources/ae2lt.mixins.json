@@ -7,8 +7,8 @@
   "refmap": "ae2lt.refmap.json",
   "mixins": [
     "InscriberProcessorRecipeLoaderMixin",
-    "OverloadAlloyAnvilFallingMixin",
-    "OverloadAlloyAnvilMenuMixin",
+    "RainbowPigmeeRecipeManagerMixin",
+    "BlockEntityInventoryChangeMixin",
     "ServerLevelMixin",
     "CraftingCPURecordAccessor",
     "TimeWheelCraftingCPUCyclerMixin",
@@ -53,8 +53,7 @@
     "big.BigCraftConfirmMenuMixin",
     "big.BigCraftingPlanSummaryMixin",
     "big.BigCraftingStatusEntryMixin",
-    "big.BigCpuListEntryMixin",
-    "TianshuStonecutterMenuMixin"
+    "big.BigCpuListEntryMixin"
   ],
   "client": [
     "client.CableBusRenderStateMixin",

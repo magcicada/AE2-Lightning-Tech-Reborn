@@ -12,6 +12,7 @@ import com.moakiee.ae2lt.recipe.CreativePigmeeDuplicationRecipe;
 import com.moakiee.ae2lt.recipe.HyperdimensionalPigmeeConversionRecipe;
 import com.moakiee.ae2lt.recipe.PigmeeBuildingRecipe;
 import com.moakiee.ae2lt.recipe.RainbowPigmeeDyeRecipe;
+import com.moakiee.ae2lt.recipe.RainbowPigmeeColorCycleRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -111,6 +112,11 @@ public final class ModRecipeTypes {
     public static final RegistryObject<RecipeSerializer<RainbowPigmeeDyeRecipe>>
             RAINBOW_PIGMEE_DYE_SERIALIZER =
                     RECIPE_SERIALIZERS.register("rainbow_pigmee_dye", RainbowPigmeeDyeRecipe.Serializer::new);
+
+    public static final RegistryObject<RecipeSerializer<RainbowPigmeeColorCycleRecipe>>
+            RAINBOW_PIGMEE_COLOR_CYCLE_SERIALIZER =
+                    RECIPE_SERIALIZERS.register("rainbow_pigmee_color_cycle",
+                            () -> new SimpleCraftingRecipeSerializer<>(RainbowPigmeeColorCycleRecipe::new));
 
     private ModRecipeTypes() {
     }

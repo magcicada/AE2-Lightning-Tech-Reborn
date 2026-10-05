@@ -1,7 +1,6 @@
 package com.moakiee.ae2lt.debug;
 
 import appeng.api.config.Actionable;
-import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.StorageCells;
@@ -10,18 +9,10 @@ import appeng.blockentity.storage.DriveBlockEntity;
 import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEItems;
 import appeng.me.cluster.implementations.QuantumCluster;
-import appeng.menu.locator.MenuLocators;
-import appeng.menu.SlotSemantics;
-import appeng.parts.reporting.CraftingTerminalPart;
-import appeng.helpers.InventoryAction;
-import com.moakiee.ae2lt.integration.ae2wtlib.TianshuWctIntegration;
-import com.moakiee.ae2lt.logic.tianshu.terminal.TianshuWirelessCraftingTermMenuHost;
 import com.moakiee.ae2lt.integration.ae2wtlib.TianshuWTMenuHost;
-import com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu;
 import com.moakiee.ae2lt.menu.TianshuWirelessPatternEncodingTermMenu;
 import com.moakiee.ae2lt.registry.ModItems;
 import com.mojang.authlib.GameProfile;
-import de.mari_023.ae2wtlib.terminal.ItemWT;
 import de.mari_023.ae2wtlib.terminal.WTMenuHost;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -107,31 +98,9 @@ public final class TianshuQuantumBridgeGameTests {
     }
 
     @GameTest(templateNamespace = "ae2lt_quantum", template = "empty", timeoutTicks = 100)
-    public static void craftingMenuSurvivesStaleBridge(GameTestHelper helper) throws Exception {
-        var player = player(helper, "QuantumCraft", ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get());
-        var host = new TianshuWirelessCraftingTermMenuHost(player, 0, player.getInventory().getItem(0), (p, menu) -> {});
-        var menu = new TianshuWirelessCraftingTermMenu(11, player.getInventory(), host);
-        player.containerMenu = menu;
-        var input = host.getSubInventory(CraftingTerminalPart.INV_CRAFTING);
-        input.setItemDirect(0, new ItemStack(Items.OAK_PLANKS, 3));
-        try {
-            stale(host);
-            menu.broadcastChanges();
-            disconnected(host);
-            check(menu.getNetworkNode() == null, "wireless crafting must not expose a dead grid");
-            check(input.getStackInSlot(0).is(Items.OAK_PLANKS) && input.getStackInSlot(0).getCount() == 3,
-                    "connection loss must preserve real crafting inputs");
-        } finally {
-            menu.removed(player);
-            player.containerMenu = player.inventoryMenu;
-        }
-        helper.succeed();
-    }
-
-    @GameTest(templateNamespace = "ae2lt_quantum", template = "empty", timeoutTicks = 100)
     public static void statusAndConnectionRefreshDiscardStaleBridge(GameTestHelper helper) throws Exception {
-        var player = player(helper, "QuantumStatus", ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get());
-        var host = new TianshuWirelessCraftingTermMenuHost(player, 0, player.getInventory().getItem(0), (p, menu) -> {});
+        var player = player(helper, "QuantumStatus", ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get());
+        var host = new TianshuWTMenuHost(player, 0, player.getInventory().getItem(0), (p, menu) -> {});
         stale(host);
         check(!host.rangeCheck(), "status queried before node must also invalidate the dead bridge");
         disconnected(host);
@@ -181,94 +150,6 @@ public final class TianshuQuantumBridgeGameTests {
         var inventory = new appeng.util.inv.AppEngInternalInventory(null, 1);
         inventory.setItemDirect(0, bridge.singularity().copy());
         inventory.writeToNBT(stack.getOrCreateTag(), "singularity");
-    }
-
-    private static long stock(Bridge bridge, ServerPlayer player) {
-        return bridge.drive().getMainNode().getNode().getGrid().getStorageService().getInventory()
-                .extract(AEItemKey.of(Items.OAK_PLANKS), Long.MAX_VALUE,
-                Actionable.SIMULATE, IActionSource.ofPlayer(player));
-    }
-
-    private static long inputs(InternalInventory input) {
-        long count = 0;
-        for (int i = 0; i < input.size(); i++) if (input.getStackInSlot(i).is(Items.OAK_PLANKS)) {
-            count += input.getStackInSlot(i).getCount();
-        }
-        return count;
-    }
-
-    private static void craft(TianshuWirelessCraftingTermMenu menu, Bridge bridge, boolean online) {
-        var player = (ServerPlayer) menu.getPlayer();
-        var input = menu.getWirelessHost().getSubInventory(CraftingTerminalPart.INV_CRAFTING);
-        for (var slot : menu.getSlots(SlotSemantics.CRAFTING_GRID)) slot.set(ItemStack.EMPTY);
-        menu.getSlots(SlotSemantics.CRAFTING_GRID).get(0).set(new ItemStack(Items.OAK_PLANKS));
-        menu.getSlots(SlotSemantics.CRAFTING_GRID).get(3).set(new ItemStack(Items.OAK_PLANKS));
-        var result = menu.getSlots(SlotSemantics.CRAFTING_RESULT).get(0);
-        check(result.getItem().is(Items.STICK), "actual wireless menu must resolve native stick recipe");
-        long beforeStock = stock(bridge, player);
-        long before = beforeStock + inputs(input);
-        menu.doAction(player, InventoryAction.CRAFT_STACK, result.index, 0);
-        int made = menu.getCarried().is(Items.STICK) ? menu.getCarried().getCount() : 0;
-        check(before - stock(bridge, player) - inputs(input) == made / 2,
-                "wireless crafting conserves real input and ME stock: before=" + before + ", after="
-                        + (stock(bridge, player) + inputs(input)) + ", made=" + made + ", online=" + online);
-        if (online) {
-            check(made == 64 && stock(bridge, player) < beforeStock,
-                    "online batch must refill from real quantum ME storage: made=" + made
-                            + ", stock=" + stock(bridge, player) + ", menuLink=" + menu.isPowered()
-                            + ", hostLink=" + menu.getWirelessHost().rangeCheck());
-        } else {
-            check(stock(bridge, player) == beforeStock && made <= 4, "offline crafting must not extract cached ME stock");
-        }
-        menu.setCarried(ItemStack.EMPTY);
-    }
-
-    @GameTest(templateNamespace = "ae2lt_quantum", template = "empty", timeoutTicks = 240)
-    public static void realBridgeRebuildAndWirelessCrafting(GameTestHelper helper) {
-        if (!ModList.get().isLoaded("ae2wtlib")) {
-            helper.succeed(); // Quantum cards are an optional implementation feature.
-            return;
-        }
-        var player = player(helper, "QuantumRebuild", ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get());
-        var bridge = bridge(helper, player);
-        var center = bridge.center();
-        // No local access point or link target: all storage access must go through the quantum bridge.
-        player.setPos(center.getX() + 100, center.getY(), center.getZ() + 100);
-        helper.runAfterDelay(50, () -> {
-            equipQuantumStack(player.getInventory().getItem(0), bridge);
-            var host = new TianshuWirelessCraftingTermMenuHost(player, 0, player.getInventory().getItem(0), (p, m) -> {});
-            equipQuantum(host, bridge);
-            var menu = (TianshuWirelessCraftingTermMenu) TianshuWctIntegration.createMenu(12, player.getInventory(), host);
-            player.containerMenu = menu;
-            menu.broadcastChanges();
-            craft(menu, bridge, true);
-            var oldCluster = ((QuantumBridgeBlockEntity) helper.getLevel().getBlockEntity(center)).getCluster();
-            helper.getLevel().setBlockAndUpdate(center.east(), Blocks.AIR.defaultBlockState());
-            check(oldCluster.isDestroyed() && oldCluster.getCenter() == null, "real ring removal must destroy the cached cluster");
-            menu.broadcastChanges();
-            check(host.getActionableNode() == null && !host.rangeCheck(), "remote menu must go offline safely");
-            check(get(host, "quantumBridge") == null, "real destruction must release cached bridge");
-            craft(menu, bridge, false);
-            helper.getLevel().setBlockAndUpdate(center.east(), AEBlocks.QUANTUM_RING.block().defaultBlockState());
-            helper.runAfterDelay(50, () -> {
-                menu.broadcastChanges();
-                check(host.rangeCheck() && host.getActionableNode() != null,
-                        "same open terminal must reconnect after real bridge rebuild");
-                check(get(host, "quantumBridge") != oldCluster, "must discover the new cluster");
-                // Native AE2 updates the host after synchronizing the menu's link status.
-                helper.runAfterDelay(1, () -> {
-                    try {
-                        menu.broadcastChanges();
-                        craft(menu, bridge, true);
-                        System.out.println("TIANSHU_QUANTUM_PASS real bridge dismantle/rebuild, same-menu reconnect, online/offline crafting conservation");
-                    } finally {
-                        menu.removed(player);
-                        player.containerMenu = player.inventoryMenu;
-                    }
-                    helper.succeed();
-                });
-            });
-        });
     }
 
     @GameTest(templateNamespace = "ae2lt_quantum", template = "empty", timeoutTicks = 140)

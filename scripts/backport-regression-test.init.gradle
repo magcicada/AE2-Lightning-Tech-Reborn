@@ -7,14 +7,13 @@ allprojects {
                 '**/ForgeCraftingInput.java', '**/MiningFactoryGameTests.java',
                 '**/OverloadedIOPortGameTests.java', '**/RainbowPigmeeGameTests.java',
                 '**/PigmeeBuildingGameTests.java', '**/ProviderReturnFilterGameTests.java',
-                '**/TianshuCraftingGameTests.java', '**/TianshuCellScrollFixture.java',
-                '**/TianshuWirelessGameTestChecks.java', '**/PhaseLockCreativeRecoveryGameTests.java',
+                '**/PhaseLockCreativeRecoveryGameTests.java',
                 '**/PhaseFlightAndLockGameTests.java', '**/PhaseFlightGroundCrouchGameTests.java',
                 '**/OverloadProcessingRecipeSyncGameTests.java', '**/TianshuWirelessBindingGameTests.java'])
         minecraft.runs.gameTestServer {
             workingDirectory project.file('build/backport-regression-forge')
             property 'forge.enabledGameTestNamespaces',
-                    'ae2lt,ae2lt_mining,ae2lt_io,ae2lt_workstation,ae2lt_phase,ae2lt_phase_lock,ae2lt_main_fixes,ae2lt_wireless_binding'
+                    'ae2lt,ae2lt_mining,ae2lt_io,ae2lt_phase,ae2lt_phase_lock,ae2lt_main_fixes,ae2lt_wireless_binding'
             mods { ae2lt { source sourceSets.jdb } }
         }
     }

@@ -39,7 +39,6 @@ import com.moakiee.ae2lt.blockentity.PigmeeMentalmathUnitBlockEntity;
 import com.moakiee.ae2lt.blockentity.PigmeeMolecularAssemblerBlockEntity;
 import com.moakiee.ae2lt.blockentity.PigmeePatternProviderBlockEntity;
 import com.moakiee.ae2lt.blockentity.TeslaCoilBlockEntity;
-import com.moakiee.ae2lt.block.TeslaCoilBlock;
 import com.moakiee.ae2lt.blockentity.AdvancedWirelessOverloadedControllerBlockEntity;
 import com.moakiee.ae2lt.blockentity.WirelessOverloadedControllerBlockEntity;
 import com.moakiee.ae2lt.blockentity.WirelessReceiverBlockEntity;
@@ -242,8 +241,6 @@ public class AE2LightningTech {
                         acceptCreative(output, ModBlocks.CLOSED_LOOP_PATTERN_STORAGE);
                         acceptCreative(output, ModBlocks.CLOSED_LOOP_SEED_STORAGE);
                         acceptCreative(output, ModItems.TIANSHU_PATTERN_ENCODING_TERMINAL);
-                        acceptCreative(output, ModItems.TIANSHU_CRAFTING_TERMINAL);
-                        ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.ifPresent(output::accept);
                         ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.ifPresent(output::accept);
 
                         // 天枢物质扭曲矩阵
@@ -310,7 +307,6 @@ public class AE2LightningTech {
 
                         // 苍穹织雷装备、能量模块
                         acceptCreative(output, ModBlocks.OVERLOAD_DEVICE_WORKBENCH);
-                        acceptCreative(output, ModBlocks.OVERLOAD_ALLOY_ANVIL);
                         acceptCreative(output, ModItems.OVERLOAD_MODULE_BASE);
                         acceptCreative(output, ModItems.CELESTWEAVE_OCULUS);
                         acceptCreative(output, ModItems.CELESTWEAVE_CORE);
@@ -1184,9 +1180,6 @@ public class AE2LightningTech {
             if (net.minecraftforge.fml.ModList.get().isLoaded("ae2wtlib")) {
                 GridLinkables.register(
                         ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get(),
-                        WirelessTerminalItem.LINKABLE_HANDLER);
-                GridLinkables.register(
-                        ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get(),
                         WirelessTerminalItem.LINKABLE_HANDLER);
                 Ae2wtlibIntegration.verifyTerminalRegistration();
                 Ae2wtlibIntegration.register();

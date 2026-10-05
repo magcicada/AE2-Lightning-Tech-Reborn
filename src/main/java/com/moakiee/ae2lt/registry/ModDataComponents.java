@@ -36,11 +36,6 @@ public final class ModDataComponents {
     /** NBT key 统一前缀：所有 AE2LT 私有数据都放在这里，便于投影镜像等逻辑过滤。 */
     public static final String TAG_PREFIX = "ae2lt:";
 
-    /** The wireless terminal owns manual inputs just as it owns its ordinary crafting grid. */
-    public static final ComponentKey<CompoundTag> TIANSHU_WORKSTATIONS = new ComponentKey<>(
-            TAG_PREFIX + "tianshu_workstations", tag -> tag.getCompound(TAG_PREFIX + "tianshu_workstations").copy(),
-            (tag, value) -> tag.put(TAG_PREFIX + "tianshu_workstations", value.copy()));
-
     /**
      * 组件 key：NBT tag key + 编解码函数。
      *

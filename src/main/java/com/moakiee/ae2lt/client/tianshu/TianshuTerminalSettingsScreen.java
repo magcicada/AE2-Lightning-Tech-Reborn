@@ -6,13 +6,11 @@ import com.moakiee.ae2lt.client.compat.JeiWirelessSupplyClient;
 import appeng.client.gui.AESubScreen;
 import appeng.client.gui.Icon;
 import appeng.client.gui.me.common.TerminalSettingsScreen;
-import com.moakiee.ae2lt.client.gui.AE2Button;
 import appeng.client.gui.widgets.TabButton;
 import appeng.menu.SlotSemantics;
 import appeng.menu.me.common.MEStorageMenu;
 import com.moakiee.ae2lt.config.AE2LTClientConfig;
 import com.moakiee.ae2lt.config.TianshuUploadTrigger;
-import com.moakiee.ae2lt.menu.TianshuPatternEncodingTermMenu;
 import com.moakiee.ae2lt.menu.Ae2ltSlotSemantics;
 import java.util.List;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,20 +23,15 @@ public final class TianshuTerminalSettingsScreen<M extends MEStorageMenu>
     private net.minecraft.client.gui.components.Button triggerButton;
     private net.minecraft.client.gui.components.Button duplicateEncodingButton;
     private net.minecraft.client.gui.components.Button wirelessSupplyButton;
-    private final boolean patternTerminal;
 
     public TianshuTerminalSettingsScreen(TerminalSettingsScreen<M> parent) {
-        super(parent, parent.getMenu() instanceof TianshuPatternEncodingTermMenu
-                ? "/screens/tianshu_terminal_settings.json" : "/screens/tianshu_crafting_settings.json");
-        patternTerminal = parent.getMenu() instanceof TianshuPatternEncodingTermMenu;
+        super(parent, "/screens/tianshu_terminal_settings.json");
         hideTerminalSlots();
         widgets.add("back", new TabButton(Icon.ARROW_LEFT,
                 Component.translatable("gui.back"), ignored -> returnToParent()));
-        if (patternTerminal) {
-            triggerButton = widgets.addButton("uploadTrigger", triggerLabel(), this::cycleTrigger);
-            duplicateEncodingButton = widgets.addButton(
-                    "duplicateEncoding", duplicateEncodingLabel(), this::toggleDuplicateEncoding);
-        }
+        triggerButton = widgets.addButton("uploadTrigger", triggerLabel(), this::cycleTrigger);
+        duplicateEncodingButton = widgets.addButton(
+                "duplicateEncoding", duplicateEncodingLabel(), this::toggleDuplicateEncoding);
         wirelessSupplyButton = widgets.addButton("jeiWirelessSupply", wirelessSupplyLabel(), () -> {
             AE2LTClientConfig.setJeiWirelessSupply(!AE2LTClientConfig.jeiWirelessSupply());
             if (net.minecraftforge.fml.ModList.get().isLoaded("jei")) JeiWirelessSupplyClient.clear();
@@ -55,10 +48,7 @@ public final class TianshuTerminalSettingsScreen<M extends MEStorageMenu>
                 SlotSemantics.SMITHING_TABLE_ADDITION, SlotSemantics.SMITHING_TABLE_RESULT,
                 SlotSemantics.STONECUTTING_INPUT, SlotSemantics.BLANK_PATTERN,
                 SlotSemantics.ENCODED_PATTERN, SlotSemantics.PLAYER_INVENTORY,
-                SlotSemantics.PLAYER_HOTBAR, Ae2ltSlotSemantics.TIANSHU_SMITHING,
-                Ae2ltSlotSemantics.TIANSHU_ANVIL, Ae2ltSlotSemantics.TIANSHU_STONECUTTING,
-                Ae2ltSlotSemantics.TIANSHU_CELL, Ae2ltSlotSemantics.TIANSHU_CELL_UPGRADE,
-                Ae2ltSlotSemantics.TIANSHU_CELL_CONFIG, Ae2ltSlotSemantics.TIANSHU_CLOSED_LOOP_MEMBER,
+                SlotSemantics.PLAYER_HOTBAR, Ae2ltSlotSemantics.TIANSHU_CLOSED_LOOP_MEMBER,
                 Ae2ltSlotSemantics.TIANSHU_CLOSED_LOOP_OUTPUT_MARK, Ae2ltSlotSemantics.TIANSHU_GLOBAL_RESERVE_MARK)) {
             setSlotsHidden(semantic, true);
         }
@@ -95,21 +85,19 @@ public final class TianshuTerminalSettingsScreen<M extends MEStorageMenu>
     @Override
     public void drawFG(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(graphics, offsetX, offsetY, mouseX, mouseY);
-        if (patternTerminal) {
-            graphics.drawString(font, Component.translatable("ae2lt.tianshu.settings.upload_trigger"),
-                    10, 30, 0x404040, false);
-            graphics.drawWordWrap(font,
-                    Component.translatable("ae2lt.tianshu.settings.upload_trigger.hint"),
-                    10, 72, 180, 0x666666);
-            graphics.drawString(font,
-                    Component.translatable("ae2lt.tianshu.settings.duplicate_encoding"),
-                    10, 118, 0x404040, false);
-            graphics.drawWordWrap(font,
-                    Component.translatable("ae2lt.tianshu.settings.duplicate_encoding.hint"),
-                    10, 160, 180, 0x666666);
-        }
+        graphics.drawString(font, Component.translatable("ae2lt.tianshu.settings.upload_trigger"),
+                10, 30, 0x404040, false);
+        graphics.drawWordWrap(font,
+                Component.translatable("ae2lt.tianshu.settings.upload_trigger.hint"),
+                10, 72, 180, 0x666666);
+        graphics.drawString(font,
+                Component.translatable("ae2lt.tianshu.settings.duplicate_encoding"),
+                10, 118, 0x404040, false);
+        graphics.drawWordWrap(font,
+                Component.translatable("ae2lt.tianshu.settings.duplicate_encoding.hint"),
+                10, 160, 180, 0x666666);
         graphics.drawString(font, Component.translatable("ae2lt.tianshu.settings.jei_supply"),
-                10, patternTerminal ? 202 : 30, 0x404040, false);
+                10, 202, 0x404040, false);
     }
 
     @Override

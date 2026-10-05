@@ -1,0 +1,17 @@
+// JAVA_HOME=<Java 17> ./gradlew -I scripts/rainbow-pigmee-test.init.gradle runGameTestServer
+allprojects {
+    afterEvaluate {
+        sourceSets.jdb.java.setIncludes([
+                '**/ForgeCraftingInput.java', '**/RainbowPigmeeGameTests.java',
+                '**/RainbowPigmeeRecolorGameTests.java'])
+        configurations.runtimeOnly.dependencies.removeIf { dep ->
+            !(dep.group in ['com.moakiee.thunderbolt', 'appeng', 'org.appliedenergistics', 'mezz.jei'])
+        }
+        minecraft.runs.gameTestServer {
+            property 'forge.enabledGameTestNamespaces', 'ae2lt'
+            property 'forge.logging.console.level', 'info'
+            workingDirectory project.layout.buildDirectory.dir('rainbow-pigmee-gametest').get().asFile
+            mods { "${project.mod_id}" { source sourceSets.jdb } }
+        }
+    }
+}

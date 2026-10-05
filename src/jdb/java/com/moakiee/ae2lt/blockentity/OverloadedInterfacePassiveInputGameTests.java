@@ -23,11 +23,11 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
 /** Uses real capabilities, powered AE grids, cells and block-entity persistence. */
 @GameTestHolder("ae2lt_interface_input")
@@ -51,7 +51,7 @@ public final class OverloadedInterfacePassiveInputGameTests {
         owner.setInterfaceMode(wireless ? OverloadedInterfaceBlockEntity.InterfaceMode.WIRELESS
                 : OverloadedInterfaceBlockEntity.InterfaceMode.NORMAL);
         helper.runAfterDelay(40, () -> {
-            var items = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, owner.getBlockPos(), Direction.UP);
+            var items = owner.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
             check(items != null && owner.getMainNode().isActive(), "inactive fixture or missing item capability");
             for (int i = 0; i < 1000; i++) {
                 check(items.insertItem(0, new ItemStack(Items.STONE), true).isEmpty(), "simulate rejected");
@@ -82,9 +82,9 @@ public final class OverloadedInterfacePassiveInputGameTests {
         });
         helper.runAfterDelay(55, () -> {
             check(buffer(owner).amount(STONE) == 64 && stored(owner, STONE) == 0, "rejection lost input");
-            var saved = owner.saveWithoutMetadata(helper.getLevel().registryAccess());
+            var saved = owner.saveWithoutMetadata();
             owner.clearImportBuffer();
-            owner.loadTag(saved, helper.getLevel().registryAccess());
+            owner.loadTag(saved);
             check(buffer(owner).amount(STONE) == 64, "save/reload changed input ownership");
             drive(helper).getInternalInventory().insertItem(0, AEItems.ITEM_CELL_1K.stack(), false);
         });
@@ -109,12 +109,12 @@ public final class OverloadedInterfacePassiveInputGameTests {
             check(input.insert(0, STONE, Long.MAX_VALUE, Actionable.SIMULATE) == capacity, "simulation capacity");
             check(buffer(owner).isEmpty(), "capacity probe reserved space");
             check(input.insert(0, STONE, capacity - 7, Actionable.MODULATE) == capacity - 7, "capacity fill");
-            var items = helper.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, owner.getBlockPos(), Direction.UP);
+            var items = owner.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
             check(items.insertItem(0, new ItemStack(Items.STONE, 64), false).getCount() == 57, "wrong remainder");
             check(input.insert(1, STONE, 1, Actionable.MODULATE) == 0, "slot index bypassed shared limit");
-            check(owner.exportSettings(appeng.util.SettingsFrom.MEMORY_CARD, null)
-                    .get(com.moakiee.ae2lt.registry.ModDataComponents.INTERFACE_INPUT_BUFFER.get()) == null,
-                    "memory card copied owned resources");
+            var memorySettings = new net.minecraft.nbt.CompoundTag();
+            owner.exportSettings(appeng.util.SettingsFrom.MEMORY_CARD, memorySettings, null);
+            check(!memorySettings.contains("ae2ltPassiveInput"), "memory card copied owned resources");
             var restored = dismantleAndReplace(helper, owner);
             check(buffer(restored).amount(STONE) == capacity, "dismantling truncated pending items");
             helper.succeed();
@@ -159,7 +159,7 @@ public final class OverloadedInterfacePassiveInputGameTests {
     public static void fluidsPersistAndNetworkReentryIsRejectedWhileGuiRemainsImmediate(GameTestHelper helper) {
         var owner = fixture(helper, true, true);
         helper.runAfterDelay(40, () -> {
-            var fluid = helper.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, owner.getBlockPos(), Direction.UP);
+            var fluid = owner.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP).orElse(null);
             check(fluid != null, "missing fluid capability");
             check(fluid.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.SIMULATE) == 1000,
                     "fluid simulation rejected");
@@ -167,9 +167,9 @@ public final class OverloadedInterfacePassiveInputGameTests {
             check(fluid.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE) == 1000,
                     "fluid admission rejected");
             var water = AEFluidKey.of(Fluids.WATER);
-            var saved = owner.saveWithoutMetadata(helper.getLevel().registryAccess());
+            var saved = owner.saveWithoutMetadata();
             owner.clearImportBuffer();
-            owner.loadTag(saved, helper.getLevel().registryAccess());
+            owner.loadTag(saved);
             check(buffer(owner).amount(water) == 1000, "fluid reload lost input");
             var proxy = ((OverloadedInterfaceLogic) owner.getInterfaceLogic()).getProxiedStorage();
             proxy.runWithNetworkGuard(() -> {
@@ -208,7 +208,11 @@ public final class OverloadedInterfacePassiveInputGameTests {
                 owner.getBlockPos(), owner, null, ItemStack.EMPTY);
         var item = drops.stream().filter(s -> s.is(ModBlocks.OVERLOADED_INTERFACE.get().asItem()))
                 .findFirst().orElseThrow(() -> new IllegalStateException("missing interface drop"));
-        check(item.has(com.moakiee.ae2lt.registry.ModDataComponents.INTERFACE_INPUT_BUFFER.get()), "missing owned input component");
+        var settings = item.getTag();
+        var blockEntitySettings = item.getTagElement("BlockEntityTag");
+        check((settings != null && settings.contains("ae2ltPassiveInput", net.minecraft.nbt.Tag.TAG_LIST))
+                || (blockEntitySettings != null && blockEntitySettings.contains("ae2ltPassiveInput", net.minecraft.nbt.Tag.TAG_LIST)),
+                "missing owned input NBT");
         // These are the additional drops used by both normal break and wrench dismantling.
         var additional = new ArrayList<ItemStack>();
         owner.addAdditionalDrops(helper.getLevel(), owner.getBlockPos(), additional);

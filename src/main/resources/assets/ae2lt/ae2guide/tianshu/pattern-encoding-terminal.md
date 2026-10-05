@@ -30,7 +30,7 @@ The terminal offers the normal terminal's crafting, processing, stonecutting, an
 
 ## JEI Wireless Ingredients
 
-Enable **JEI wireless ingredients** under **Terminal Settings → Tianshu Settings** (off by default and shared by this client). The Tianshu Crafting Terminal exposes the same switch. Carry a connected Wireless Tianshu Crafting Terminal or Wireless Tianshu Pattern Encoding Terminal in your inventory or Curios to refill missing items when using JEI transfer in a supported workbench or machine. Tianshu modules inside a Wireless Universal Terminal work too.
+Enable **JEI wireless ingredients** under **Terminal Settings → Tianshu Settings** (off by default and shared by this client). Carry a connected Wireless Tianshu Pattern Encoding Terminal in your inventory or Curios to refill missing items when using JEI transfer in a supported workbench or machine. Tianshu modules inside a Wireless Universal Terminal work too.
 
 The terminal needs power and a valid ME connection, and your inventory needs room for the refill. A normal click supplies one recipe; Shift uses the original handler's bulk transfer. Existing recipe and slot rules still apply. Machines without a JEI transfer handler gain no new handler, and non-item ingredients such as fluids remain the original handler's responsibility. If you close the screen or transfer fails, extracted items stay in your inventory. This setting applies to JEI's transfer entry point.
 

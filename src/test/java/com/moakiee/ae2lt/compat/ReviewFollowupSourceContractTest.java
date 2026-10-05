@@ -29,8 +29,8 @@ class ReviewFollowupSourceContractTest {
         String integration = Files.readString(Path.of(
                 "src/main/java/com/moakiee/ae2lt/integration/ae2wtlib/Ae2wtlibIntegration.java"));
 
-        assertTrue(integration.contains("WUTHandler.wirelessTerminals.get(name)"));
-        assertTrue(integration.contains("WUTHandler.terminalNames.contains(name)"));
+        assertTrue(integration.contains("WUTHandler.wirelessTerminals.get(TIANSHU_TERMINAL_NAME)"));
+        assertTrue(integration.contains("WUTHandler.terminalNames.contains(TIANSHU_TERMINAL_NAME)"));
         assertFalse(integration.contains("\"pattern_access\""));
         assertFalse(integration.contains("\"pattern_encoding\""));
     }

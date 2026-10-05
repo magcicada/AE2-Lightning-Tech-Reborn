@@ -152,12 +152,12 @@ public final class WirelessInterfaceGameTests {
         });
     }
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_export_plan", timeoutTicks = 170)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_export_plan", timeoutTicks = 210)
     public static void fastWirelessExportTypeChangesRemainResponsive(GameTestHelper helper) {
         checkExportTypeChangesRemainResponsive(helper, false);
     }
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_export_plan", timeoutTicks = 170)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_export_plan", timeoutTicks = 210)
     public static void fastLocalExportTypeChangesRemainResponsive(GameTestHelper helper) {
         checkExportTypeChangesRemainResponsive(helper, true);
     }
@@ -173,8 +173,9 @@ public final class WirelessInterfaceGameTests {
         var water = appeng.api.stacks.AEFluidKey.of(net.minecraft.world.level.material.Fluids.WATER);
         ExportVisitObservation[] observation = {null};
         long[] resumed = {-1};
+        var clock = new GridStartClock();
         helper.onEachTick(() -> {
-            long tick = helper.getTick();
+            long tick = clock.tick(helper, owner);
             if (tick < 40) return;
             var storage = owner.getMainNode().getGrid().getStorageService().getInventory();
             if (tick == 40 || tick == 100) {
@@ -220,6 +221,61 @@ public final class WirelessInterfaceGameTests {
                 helper.succeed();
             }
         });
+    }
+
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_notification_fallback", timeoutTicks = 180)
+    public static void importWithoutTargetChangeNotificationsStillPolls(GameTestHelper helper) {
+        if (Boolean.getBoolean("ae2lt.wirelessIoBenchmark")) {
+            helper.succeed();
+            return;
+        }
+        var fixture = createFixture(helper, 1);
+        var previous = (net.minecraft.world.level.block.entity.BarrelBlockEntity) fixture.inventories[0];
+        // Model a third-party override that does not call BlockEntity.setChanged().
+        var silent = new net.minecraft.world.level.block.entity.BarrelBlockEntity(
+                previous.getBlockPos(), previous.getBlockState()) {
+            @Override public void setChanged() {}
+        };
+        helper.getLevel().setBlockEntity(silent);
+        var owner = fixture.blockEntity;
+        var key = AEItemKey.of(Items.STONE);
+        var clock = new GridStartClock();
+        helper.onEachTick(() -> {
+            long tick = clock.tick(helper, owner);
+            if (tick == 80) silent.setItem(0, key.toStack(64));
+            if (tick == 110) {
+                require(silent.isEmpty(), "unnotified inventory was not polled within 30 ticks");
+                require(owner.benchmarkBufferedImportAmount() == 0
+                                && storedAmount(owner.getMainNode().getGrid().getStorageService().getInventory(), key) == 64,
+                        "polling fallback lost or duplicated the unnotified input");
+                helper.succeed();
+            }
+        });
+    }
+
+    /** Bound asynchronous fixture startup separately from the measured behavior. */
+    static final class GridStartClock {
+        private long offset = -1;
+
+        long tick(GameTestHelper helper, OverloadedInterfaceBlockEntity owner) {
+            long tick = helper.getTick();
+            if (tick < 40) return tick;
+            if (offset < 0) {
+                if (owner.getMainNode().getGrid() == null) {
+                    require(tick < 80, "fixture grid did not initialize within 80 ticks at " + owner.getBlockPos()
+                            + "; removed=" + owner.isRemoved()
+                            + "; sameEntity=" + (helper.getLevel().getBlockEntity(owner.getBlockPos()) == owner));
+                    return -1;
+                }
+                offset = tick - 40;
+                if (offset > 0) {
+                    org.slf4j.LoggerFactory.getLogger("ae2lt-wireless-io-test").info(
+                            "Fixture grid startup needed {} additional ticks at {}", offset, owner.getBlockPos());
+                }
+            }
+            require(owner.getMainNode().getGrid() != null, "fixture grid disappeared after startup");
+            return tick - offset;
+        }
     }
 
     @GameTest(template = "wireless_io_empty", batch = "wireless_io_02_export_plan", timeoutTicks = 140)

@@ -76,7 +76,7 @@ public final class LightningKeyClientInit {
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
         event.register(
                 (stack, tintIndex) -> AEColor.TRANSPARENT.getVariantByTintIndex(tintIndex) | 0xFF000000,
-                ModItems.TIANSHU_PATTERN_ENCODING_TERMINAL.get(), ModItems.TIANSHU_CRAFTING_TERMINAL.get());
+                ModItems.TIANSHU_PATTERN_ENCODING_TERMINAL.get());
 
         event.register(
                 (stack, tintIndex) -> BasicStorageCell.getColor(stack, tintIndex) | 0xFF000000,

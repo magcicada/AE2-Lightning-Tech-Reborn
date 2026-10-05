@@ -23,22 +23,22 @@ import org.slf4j.LoggerFactory;
 public final class OverloadedInterfaceModeGameTests {
     private OverloadedInterfaceModeGameTests() {}
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_08_normal_import", timeoutTicks = 1080)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_08_normal_import", timeoutTicks = 1120)
     public static void normalWirelessImportBatchesWithoutBlocking(GameTestHelper helper) {
         run(helper, false, false);
     }
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_09_normal_export", timeoutTicks = 1080)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_09_normal_export", timeoutTicks = 1120)
     public static void normalWirelessExportBatchesWithoutStarving(GameTestHelper helper) {
         run(helper, false, true);
     }
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_10_normal_local_import", timeoutTicks = 1080)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_10_normal_local_import", timeoutTicks = 1120)
     public static void normalLocalImportBatchesWithoutBlocking(GameTestHelper helper) {
         run(helper, true, false);
     }
 
-    @GameTest(template = "wireless_io_empty", batch = "wireless_io_11_normal_local_export", timeoutTicks = 1080)
+    @GameTest(template = "wireless_io_empty", batch = "wireless_io_11_normal_local_export", timeoutTicks = 1120)
     public static void normalLocalExportBatchesWithoutStarving(GameTestHelper helper) {
         run(helper, true, true);
     }
@@ -66,9 +66,10 @@ public final class OverloadedInterfaceModeGameTests {
         long[] processed = new long[27];
         long[][] visits = new long[3][inventories.length];
         int[][] previous = new int[inventories.length][27];
+        var clock = new WirelessInterfaceGameTests.GridStartClock();
 
         helper.onEachTick(() -> {
-            int tick = Math.toIntExact(helper.getTick());
+            int tick = Math.toIntExact(clock.tick(helper, owner));
             if (tick < 40) return;
             var storage = owner.getMainNode().getGrid().getStorageService().getInventory();
             if (tick == 40 && exporting) {

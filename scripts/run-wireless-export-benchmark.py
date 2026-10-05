@@ -41,6 +41,8 @@ def main():
     if args.warmup < 40 or args.samples < 200 or args.warmup + args.samples > 1420:
         parser.error("require warmup >= 40, samples >= 200, total <= 1420")
     allowed = {"1024x27", "import-period60-1024x27", "import-buffered-normal-1024x27",
+               "high-cardinality-reject", "equal-load-recovery",
+               "equal-load-partial-recovery", "equal-load-sustained",
                "export-empty-1024", "export-mismatch-1024"} | {
         f"export-continuous-{targets}x{keys}" for targets in (64, 256, 1024) for keys in (1, 27)}
     if not set(args.profiles) <= allowed:
@@ -77,7 +79,11 @@ def main():
                     destination = output / profile / name
                     destination.mkdir(parents=True, exist_ok=True)
                     scenario = f"gametest-{role}-{profile}-run{run}"
+                    run_directory = destination / "worlds" / f"{role}-run{run}"
+                    if run_directory.exists():
+                        raise RuntimeError(f"refusing to reuse a benchmark world: {run_directory}")
                     command = gradle(project) + ["runWirelessIoGameTestServer",
+                        f"-Pae2ltBenchmarkRunDirectory={run_directory}",
                         f"-Pae2ltBenchmarkScenario={scenario}", f"-Pae2ltBenchmarkCommit={name}",
                         f"-Pae2ltBenchmarkGitHead={snapshots[name]['head']}",
                         f"-Pae2ltBenchmarkWorktreeDirty={str(snapshots[name]['dirty']).lower()}",
@@ -88,7 +94,7 @@ def main():
                     started = time.time()
                     with (destination / f"{role}-run{run}.log").open("w") as log:
                         result = subprocess.run(command, cwd=project, stdout=log, stderr=subprocess.STDOUT)
-                    reports = project / "run-wireless-io-gametest/benchmark-reports/wireless-interface-io"
+                    reports = run_directory / "benchmark-reports/wireless-interface-io"
                     fresh = [p for p in reports.glob(f"*{scenario}.json") if p.stat().st_mtime >= started]
                     report_ok = False
                     if len(fresh) == 1:
@@ -107,6 +113,7 @@ def main():
                     ok = result.returncode == 0 and report_ok and same_registration
                     failed |= not ok
                     manifest["runs"].append({"version": name, "scenario": scenario,
+                        "runDirectory": str(run_directory), "freshWorld": True,
                         "exitCode": result.returncode, "completeReport": report_ok, "gameTests": game_tests,
                         "sameRegistration": same_registration,
                         "elapsedSeconds": round(time.time() - started, 2)})

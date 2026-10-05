@@ -103,10 +103,6 @@ public final class ModBlocks {
         return Collections.unmodifiableMap(panels);
     }
 
-    public static final RegistryObject<com.moakiee.ae2lt.block.OverloadAlloyAnvilBlock> OVERLOAD_ALLOY_ANVIL =
-            registerBlock("overload_alloy_anvil", () -> new com.moakiee.ae2lt.block.OverloadAlloyAnvilBlock(
-                    BlockBehaviour.Properties.copy(net.minecraft.world.level.block.Blocks.ANVIL)));
-
     private static final BlockBehaviour.Properties BUDDING_PROPERTIES = BlockBehaviour.Properties.of()
             .mapColor(MapColor.COLOR_CYAN)
             .strength(3.0F, 5.0F)

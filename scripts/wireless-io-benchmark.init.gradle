@@ -16,6 +16,8 @@ allprojects {
             workingDirectory project.layout.buildDirectory.dir('wireless-io-semantic-gametest').get().asFile
         }
         minecraft.runs.wirelessIoGameTestServer {
+            workingDirectory project.file(providers.gradleProperty('ae2ltBenchmarkRunDirectory')
+                    .getOrElse('run-wireless-io-gametest'))
             jvmArgs '-Xms512m', '-Xmx2g'
         }
     }

@@ -35,8 +35,7 @@ public final class TianshuWirelessBindingGameTests {
     public static void wirelessAccessPointBinding(GameTestHelper helper) {
         var level = helper.getLevel();
         var player = player(level, "TianshuBinding");
-        for (var item : List.of(ModItems.TIANSHU_WIRELESS_CRAFTING_TERMINAL.get(),
-                ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get())) {
+        for (var item : List.of(ModItems.TIANSHU_WIRELESS_PATTERN_ENCODING_TERMINAL.get())) {
             var terminal = new ItemStack(item);
             terminal.getOrCreateTag().putDouble("internalCurrentPower", 12345.0);
             terminal.setHoverName(Component.literal("Binding preserves NBT"));
@@ -77,7 +76,7 @@ public final class TianshuWirelessBindingGameTests {
                 }
             }
         }
-        passed("native access point binds and rebinds both wireless terminals without losing components");
+        passed("native access point binds and rebinds the wireless pattern terminal without losing components");
         helper.succeed();
     }
 

@@ -1,8 +1,0 @@
-{
-  "parent": "ae2:part/crafting_terminal_on",
-  "textures": {
-    "lightsBright": "ae2lt:part/tianshu_crafting_terminal_bright",
-    "lightsMedium": "ae2lt:part/tianshu_crafting_terminal_dark",
-    "lightsDark": "ae2lt:part/tianshu_crafting_terminal_medium"
-  }
-}

@@ -19,11 +19,9 @@ import com.moakiee.ae2lt.client.machine.PigmeeSynthesisStationScreen;
 import com.moakiee.ae2lt.client.machine.TeslaCoilScreen;
 import com.moakiee.ae2lt.client.provider.OverloadedPatternProviderScreen;
 import com.moakiee.ae2lt.client.provider.PigmeePatternProviderScreen;
-import com.moakiee.ae2lt.client.tianshu.TianshuCraftingTermScreen;
 import com.moakiee.ae2lt.client.tianshu.TianshuPatternEncodingTermScreen;
 import com.moakiee.ae2lt.client.tianshu.TianshuSeedStorageScreen;
 import com.moakiee.ae2lt.client.tianshu.TianshuSupercomputerControllerScreen;
-import com.moakiee.ae2lt.client.tianshu.TianshuWirelessCraftingTermScreen;
 import com.moakiee.ae2lt.client.tianshu.TianshuWirelessPatternEncodingTermScreen;
 
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -102,31 +100,13 @@ public class ModScreens {
             MenuScreens.register(MatrixPortMenu.TYPE, MatrixPortScreen::new);
             MenuScreens.register(TianshuSupercomputerControllerMenu.TYPE, TianshuSupercomputerControllerScreen::new);
             MenuScreens.register(TianshuPatternEncodingTermMenu.TYPE, ModScreens::createTianshuPatternEncodingTermScreen);
-            MenuScreens.register(com.moakiee.ae2lt.menu.TianshuCraftingTermMenu.TYPE, ModScreens::createTianshuCraftingTermScreen);
             if (TianshuWirelessTerminalFactory.isAvailable()) {
-                MenuScreens.register(com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.TYPE, ModScreens::createTianshuWirelessCraftingTermScreen);
                 MenuScreens.register(TianshuWirelessPatternEncodingTermMenu.TYPE,
                         ModScreens::createTianshuWirelessPatternEncodingTermScreen);
             }
             MenuScreens.register(TianshuSeedStorageMenu.TYPE, ModScreens::createTianshuSeedStorageScreen);
             MenuScreens.register(VoidCellMenu.TYPE, ModScreens::createVoidCellScreen);
         });
-    }
-
-    private static TianshuCraftingTermScreen<com.moakiee.ae2lt.menu.TianshuCraftingTermMenu> createTianshuCraftingTermScreen(
-            com.moakiee.ae2lt.menu.TianshuCraftingTermMenu menu, Inventory inventory, Component title) {
-        return new TianshuCraftingTermScreen<>(menu, inventory, title,
-                StyleManager.loadStyleDoc("/screens/terminals/tianshu_crafting_terminal.json"));
-    }
-
-    private static TianshuWirelessCraftingTermScreen<com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu> createTianshuWirelessCraftingTermScreen(
-            com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu menu, Inventory inventory, Component title) {
-        if (net.minecraftforge.fml.ModList.get().isLoaded("ae2wtlib")) {
-            var style = StyleManager.loadStyleDoc("/screens/wireless_tianshu_enhanced_crafting_terminal.json");
-            return new com.moakiee.ae2lt.integration.ae2wtlib.client.TianshuEnhancedWirelessCraftingScreen(menu, inventory, title, style);
-        }
-        var style = StyleManager.loadStyleDoc("/screens/wireless_tianshu_crafting_terminal.json");
-        return new TianshuWirelessCraftingTermScreen<>(menu, inventory, title, style);
     }
 
     private static TianshuPatternEncodingTermScreen<TianshuPatternEncodingTermMenu> createTianshuPatternEncodingTermScreen(

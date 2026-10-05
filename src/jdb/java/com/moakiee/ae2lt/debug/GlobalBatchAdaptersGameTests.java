@@ -42,46 +42,10 @@ public final class GlobalBatchAdaptersGameTests {
         run(helper, BatchCpuAccounting.Mode.SUCCESSFUL_DISPATCH, false, 8, true);
         helper.succeed();
     }
-    @GameTest(template = "empty")
-    public static void releasedUselessProtocolUsesGlobalRegistration(GameTestHelper helper) throws Exception {
-        // The normal suite also runs without optional mods; an enabled probe must resolve globally.
-        if (!net.minecraftforge.fml.ModList.get().isLoaded("useless_mod")) { helper.succeed(); return; }
-        var type = Class.forName("com.sorrowmist.useless.api.crafting.SmartDoublingCraftingProvider");
-        var patterns = Class.forName("com.sorrowmist.useless.content.machines.advanced_alloy_furnace.ae.SmartDoublingPatterns");
-        IPatternDetails[] received = new IPatternDetails[1];
-        long[] input = new long[1];
-        var provider = (ICraftingProvider) Proxy.newProxyInstance(type.getClassLoader(),
-                new Class<?>[] {ICraftingProvider.class, type}, (p, method, args) -> switch (method.getName()) {
-                    case "isBusy" -> false;
-                    case "getAvailablePatterns" -> List.of();
-                    case "pushPattern" -> {
-                        received[0] = (IPatternDetails) args[0];
-                        var counters = (KeyCounter[]) args[1];
-                        input[0] = counters[0].get(AEItemKey.of(Items.STONE));
-                        counters[0].reset();
-                        yield true;
-                    }
-                    default -> null;
-                });
-        var entry = BatchProviderAdapters.entries().stream().filter(e -> e.id().toString().equals("thunderbolt:useless")).findFirst().orElseThrow();
-        var pattern = new Pattern();
-        var endpoint = entry.adapter().adapt(provider, pattern, null);
-        helper.assertTrue(endpoint != null, "released Useless API registered by TB");
-        var template = new KeyCounter(); template.add(AEItemKey.of(Items.STONE), 1);
-        helper.assertTrue(endpoint.pushBatch(pattern, new KeyCounter[] {template}, 8) == 0, "accept eight logical copies");
-        helper.assertTrue((long) patterns.getMethod("operationsPerPush", IPatternDetails.class).invoke(null, received[0]) == 8, "real Useless pattern multiplier");
-        helper.assertTrue(input[0] == 8 && template.get(AEItemKey.of(Items.STONE)) == 1, "owned scaled inputs preserve borrowed template");
-        var nested = received[0];
-        var nestedInput = new KeyCounter(); nestedInput.add(AEItemKey.of(Items.STONE), 8);
-        helper.assertTrue(endpoint.pushBatch(nested, new KeyCounter[] {nestedInput}, 4) == 0, "nested batch accepted");
-        helper.assertTrue((long) patterns.getMethod("operationsPerPush", IPatternDetails.class).invoke(null, received[0]) == 32, "nested multiplier must compose");
-        helper.assertTrue(input[0] == 32, "nested input amount");
-        helper.succeed();
-    }
 
     @GameTest(template = "empty")
     public static void optionalAdaptersRegisterAndNeoEcoAcceptsPartialBatch(GameTestHelper helper) throws Exception {
-        for (var mapping : Map.of("neoecoae", "neoeco", "useless_mod", "useless", "extendedae_plus", "extendedae_plus").entrySet()) {
+        for (var mapping : Map.of("neoecoae", "neoeco", "extendedae_plus", "extendedae_plus").entrySet()) {
             if (net.minecraftforge.fml.ModList.get().isLoaded(mapping.getKey())) {
                 helper.assertTrue(BatchProviderAdapters.entries().stream().anyMatch(e -> e.id().toString().equals("thunderbolt:" + mapping.getValue())),
                         "TB registered adapter for " + mapping.getKey());

@@ -19,11 +19,7 @@ public final class TianshuWirelessTerminalFactory {
         return FMLLoader.getLoadingModList().getModFileById("ae2wtlib") != null;
     }
 
-    public static Item create() { return create("terminal"); }
-
-    public static Item createCrafting() { return create("craftingTerminal"); }
-
-    private static Item create(String method) {
+    public static Item create() {
         if (!isAvailable()) {
             throw new IllegalStateException(
                     "The wireless Tianshu terminal must not be registered without AE2WTLib");
@@ -32,7 +28,7 @@ public final class TianshuWirelessTerminalFactory {
         try {
             Class<?> integration = Class.forName(
                     INTEGRATION_CLASS, true, TianshuWirelessTerminalFactory.class.getClassLoader());
-            return Item.class.cast(integration.getMethod(method).invoke(null));
+            return Item.class.cast(integration.getMethod("terminal").invoke(null));
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException exception) {
             throw new IllegalStateException(
                     "AE2WTLib is loaded, but its Tianshu terminal integration is unavailable",

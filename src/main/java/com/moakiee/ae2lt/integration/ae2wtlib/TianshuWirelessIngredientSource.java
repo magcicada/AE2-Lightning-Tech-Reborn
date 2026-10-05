@@ -2,9 +2,8 @@ package com.moakiee.ae2lt.integration.ae2wtlib;
 
 import appeng.menu.locator.MenuLocator;
 import appeng.menu.locator.MenuLocators;
-import com.moakiee.ae2lt.logic.tianshu.terminal.TianshuWirelessCraftingTermMenuHost;
-import de.mari_023.ae2wtlib.wut.WTDefinition;
 import de.mari_023.ae2wtlib.terminal.ItemWT;
+import de.mari_023.ae2wtlib.terminal.WTMenuHost;
 import de.mari_023.ae2wtlib.wut.WUTHandler;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +17,9 @@ public final class TianshuWirelessIngredientSource {
 
     public static List<MenuLocator> locate(Player player) {
         var result = new ArrayList<MenuLocator>();
-        for (var name : List.of(Ae2wtlibIntegration.TIANSHU_CRAFTING_NAME, Ae2wtlibIntegration.TIANSHU_TERMINAL_NAME)) {
-            var locator = de.mari_023.ae2wtlib.Platform.findTerminalFromAccessory(player, name);
-            if (locator != null && !result.contains(locator)) result.add(locator);
-        }
+        var accessory = de.mari_023.ae2wtlib.Platform.findTerminalFromAccessory(
+                player, Ae2wtlibIntegration.TIANSHU_TERMINAL_NAME);
+        if (accessory != null) result.add(accessory);
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             if (isTianshu(player.getInventory().getItem(i))) result.add(MenuLocators.forInventorySlot(i));
         }
@@ -30,21 +28,25 @@ public final class TianshuWirelessIngredientSource {
 
     private static boolean isTianshu(ItemStack stack) {
         if (!(stack.getItem() instanceof ItemWT)) return false;
-        for (var name : List.of(Ae2wtlibIntegration.TIANSHU_CRAFTING_NAME, Ae2wtlibIntegration.TIANSHU_TERMINAL_NAME)) {
-            if (WUTHandler.wirelessTerminals.containsKey(name) && WUTHandler.hasTerminal(stack, name)) return true;
-        }
-        return false;
+        var name = Ae2wtlibIntegration.TIANSHU_TERMINAL_NAME;
+        return WUTHandler.wirelessTerminals.containsKey(name) && WUTHandler.hasTerminal(stack, name);
     }
 
     @Nullable
-    public static TianshuWirelessCraftingTermMenuHost open(Player player, MenuLocator locator) {
+    public static WTMenuHost open(Player player, MenuLocator locator) {
         var stack = WUTHandler.getItemStackFromLocator(player, locator);
         if (!isTianshu(stack)) return null;
         Integer inventorySlot = null;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             if (player.getInventory().getItem(i) == stack) { inventorySlot = i; break; }
         }
-        var host = new TianshuWirelessCraftingTermMenuHost(player, inventorySlot, stack, (p, menu) -> {});
+        // Ingredient supply needs only the wireless connection and energy, not either terminal's editor.
+        var host = new WTMenuHost(player, inventorySlot, stack, (p, menu) -> {}) {
+            @Override
+            public boolean stillValid() {
+                return getItemStack() == stack && super.stillValid();
+            }
+        };
         var node = host.getActionableNode();
         return host.stillValid() && host.rangeCheck() && node != null
                 && node.getGrid().getEnergyService().isNetworkPowered() ? host : null;

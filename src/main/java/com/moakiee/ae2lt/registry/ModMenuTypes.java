@@ -173,11 +173,4 @@ public final class ModMenuTypes {
     private ModMenuTypes() {
     }
 
-    public static final RegistryObject<MenuType<com.moakiee.ae2lt.menu.TianshuCraftingTermMenu>>
-            TIANSHU_CRAFTING_TERMINAL = MENU_TYPES.register("tianshu_crafting_terminal",
-                    () -> com.moakiee.ae2lt.menu.TianshuCraftingTermMenu.TYPE);
-    public static final RegistryObject<MenuType<com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu>>
-            TIANSHU_WIRELESS_CRAFTING_TERMINAL = net.minecraftforge.fml.ModList.get().isLoaded("ae2wtlib")
-                    ? MENU_TYPES.register("wireless_tianshu_crafting_terminal", () -> com.moakiee.ae2lt.menu.TianshuWirelessCraftingTermMenu.TYPE)
-                    : RegistryObject.create(new ResourceLocation(AE2LightningTech.MODID, "wireless_tianshu_crafting_terminal"), ForgeRegistries.MENU_TYPES);
 }

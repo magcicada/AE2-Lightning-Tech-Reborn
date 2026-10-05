@@ -13,6 +13,8 @@ param(
 
     [ValidateSet(
         "1024x27",
+        "import-period60-1024x27",
+        "import-buffered-normal-1024x27",
         "high-cardinality-reject",
         "equal-load-recovery",
         "equal-load-partial-recovery",
@@ -38,8 +40,6 @@ if ($WarmupTicks + $SampleTicks -gt 1420) {
 }
 $projectDirectory = Split-Path -Parent $PSScriptRoot
 $gradle = Join-Path $projectDirectory "gradlew.bat"
-$sourceDirectory = Join-Path $projectDirectory `
-    "run-wireless-io-gametest\benchmark-reports\wireless-interface-io"
 
 $identity = Get-WirelessIoGitIdentity -Directory $projectDirectory
 $gitHead = $identity.Head
@@ -63,10 +63,16 @@ function Invoke-BenchmarkRun {
     )
 
     $scenario = "gametest-$Kind-$Profile-run$Run"
+    $runDirectory = Join-Path $OutputDirectory "worlds/$Kind-run$Run"
+    if (Test-Path -LiteralPath $runDirectory) {
+        throw "Refusing to reuse a benchmark world: $runDirectory. Choose a new output directory or StartRun."
+    }
+    $sourceDirectory = Join-Path $runDirectory "benchmark-reports/wireless-interface-io"
     $before = Get-Date
     $arguments = @(
         "-p", $projectDirectory,
         "runWirelessIoGameTestServer",
+        "-Pae2ltBenchmarkRunDirectory=$runDirectory",
         "-Pae2ltBenchmarkScenario=$scenario",
         "-Pae2ltBenchmarkCommit=$Commit",
         "-Pae2ltBenchmarkWarmupTicks=$WarmupTicks",
@@ -123,6 +129,7 @@ $manifest = [ordered]@{
         elseif ($Profile.StartsWith('equal-load-')) { 'repeated-load' } else { 'idle-control' })
     ioMeasurementScope = $(if ($Profile.StartsWith('export-')) { 'grid-item-io-including-eligibility' } else { 'wireless-io-body' })
     diagnostics = $Diagnostics.IsPresent
+    freshWorldPerRun = $true
     gitHead = $gitHead
     workingTreeDirty = $gitDirty
     generatedAt = (Get-Date).ToUniversalTime().ToString("o")

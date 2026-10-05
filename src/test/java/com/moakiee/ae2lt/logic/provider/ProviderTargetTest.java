@@ -854,6 +854,32 @@ class ProviderTargetTest {
     }
 
     @Test
+    void skippedBulkRefillCannotLeakIntoLaterBatchStep() {
+        var pattern = new EmptyPattern();
+        target.pushPatternStep(pattern, 16L, 0L, true, () -> false,
+                copies -> new ProviderTarget.BatchChunk(copies, true, false));
+        target.pushPatternStep(pattern, 1_000L, 1L, true, () -> false,
+                copies -> copies < 16
+                        ? new ProviderTarget.BatchChunk(copies, true, false)
+                        : ProviderTarget.BatchChunk.REJECTED);
+        target.pushPatternStep(pattern, 1_000L, 2L, true, () -> false,
+                copies -> new ProviderTarget.BatchChunk(copies, true, false));
+        assertTrue(target.provenReservoirTransaction(pattern, 2L) > 0);
+
+        target.preferReservoirTransaction(pattern, true);
+        target.pushPatternStep(pattern, 1_000L, 3L, true, () -> true,
+                copies -> { throw new AssertionError("blocked target was dispatched"); });
+
+        var chunks = new ArrayList<Integer>();
+        target.pushPatternStep(pattern, 1_000L, 4L, true, () -> false,
+                copies -> {
+                    chunks.add(copies);
+                    return new ProviderTarget.BatchChunk(copies, true, false);
+                });
+        assertTrue(chunks.size() > 1, "bulk preference survived the skipped visit");
+    }
+
+    @Test
     void wirelessBatchStepBacksOffWhenProvenChunkNoLongerFits() {
         var pattern = new EmptyPattern();
         target.pushPatternStep(

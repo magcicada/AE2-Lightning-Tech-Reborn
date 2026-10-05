@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.networking.IGrid;
+import appeng.api.networking.energy.IEnergyService;
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
@@ -33,6 +34,29 @@ public final class PowerCostUtil {
     private static final double RESERVE_TICKS = 1.0;
 
     private PowerCostUtil() {
+    }
+
+    /** Pass-local lookup cache; never retains a balance or a stale grid's service. */
+    public static final class EnergyAccess {
+        private IGrid grid;
+        private IEnergyService service;
+
+        private IEnergyService resolve(@Nullable IGrid currentGrid) {
+            if (currentGrid != grid) {
+                var resolved = currentGrid != null ? currentGrid.getEnergyService() : null;
+                service = resolved;
+                grid = currentGrid;
+            }
+            return service;
+        }
+
+        public long maxAffordable(@Nullable IGrid grid, AEKey key, long requested) {
+            return maxAffordableFromService(resolve(grid), key, requested);
+        }
+
+        public void consume(@Nullable IGrid grid, AEKey key, long amount) {
+            consumeFromService(resolve(grid), key, amount);
+        }
     }
 
     /** AE amount bulk consumers must leave in the grid (see {@link #RESERVE_TICKS}). */
@@ -75,11 +99,16 @@ public final class PowerCostUtil {
         if (grid == null || key == null || requested <= 0) {
             return 0;
         }
+        return maxAffordableFromService(grid.getEnergyService(), key, requested);
+    }
+
+    /** Reuse a pass-local service reference, not a cached power balance. */
+    public static long maxAffordableFromService(@Nullable IEnergyService energyService, AEKey key, long requested) {
+        if (energyService == null || key == null || requested <= 0) return 0;
         double need = cost(key, requested);
         if (need <= 0.0) {
             return requested;
         }
-        var energyService = grid.getEnergyService();
         double reserve = idleReserveForIdlePowerUsage(energyService.getIdlePowerUsage());
         double available = energyService
                 .extractAEPower(need + reserve, Actionable.SIMULATE, PowerMultiplier.CONFIG);
@@ -114,11 +143,17 @@ public final class PowerCostUtil {
         if (grid == null || key == null || amount <= 0) {
             return;
         }
+        consumeFromService(grid.getEnergyService(), key, amount);
+    }
+
+    /** The caller must still check live affordability before every external transfer. */
+    public static void consumeFromService(@Nullable IEnergyService energyService, AEKey key, long amount) {
+        if (energyService == null || key == null || amount <= 0) return;
         double need = cost(key, amount);
         if (need <= 0.0) {
             return;
         }
-        grid.getEnergyService().extractAEPower(need, Actionable.MODULATE, PowerMultiplier.CONFIG);
+        energyService.extractAEPower(need, Actionable.MODULATE, PowerMultiplier.CONFIG);
     }
 
     /**

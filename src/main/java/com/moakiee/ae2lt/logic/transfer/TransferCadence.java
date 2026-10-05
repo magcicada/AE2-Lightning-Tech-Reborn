@@ -118,6 +118,7 @@ public final class TransferCadence {
     public boolean isEarlyProbe() { return nextExploratory; }
     public boolean wasBlocked() { return rejectedElapsed > 0; }
     public boolean hasSuccess() { return lastSuccessTick != Long.MIN_VALUE; }
+    public long estimatedCapacity() { return capacityEstimate; }
 
     public boolean expireIfIdle(long tick) {
         if (lastActivityTick != Long.MIN_VALUE

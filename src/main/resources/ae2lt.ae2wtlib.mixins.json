@@ -7,19 +7,11 @@
   "plugin": "com.moakiee.ae2lt.mixin.ae2wtlib.Ae2wtlibMixinPlugin",
   "mixins": [
     "WTMenuHostMixin",
-    "CraftingTerminalHandlerMixin",
-    "CraftingTerminalHandlerAccessor",
-    "TianshuMagnetMenuMixin",
-    "WutCraftingPredicateMixin",
-    "TianshuMagnetHandlerMixin",
-    "TianshuTerminalMergeMixin",
-    "TianshuTerminalRecipeMixin",
     "WTMenuHostQuantumBridgeMixin",
     "WirelessTerminalGridAccessor"
   ],
   "client": [
-    "client.AEBaseScreenFrequencyTerminalButtonMixin",
-    "client.TianshuMagnetScreenMixin"
+    "client.AEBaseScreenFrequencyTerminalButtonMixin"
   ],
   "injectors": {
     "defaultRequire": 0
