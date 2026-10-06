@@ -22,6 +22,7 @@ public final class RecipeViewerMixinPlugin implements IMixinConfigPlugin {
         // in the main jar, so only JEI itself is required (the 1.21 standalone
         // AE2JEIIntegration mod does not exist for 1.20.1).
         jeiPresent = mods.getModFileById("jei") != null;
+        jeiSupplyPresent = jeiPresent && mods.getModFileById("emi") == null;
         emiPresent = mods.getModFileById("emi") != null;
     }
 

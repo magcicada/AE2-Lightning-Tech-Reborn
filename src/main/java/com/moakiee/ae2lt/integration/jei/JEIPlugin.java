@@ -60,6 +60,7 @@ public class JEIPlugin implements IModPlugin {
         // the 1.21 standalone AE2JEIIntegration mod does not exist for 1.20.1, so this
         // plugin class is itself proof that JEI is loaded.
         AE2JeiIntegrationCompat.registerConverter();
+        com.moakiee.ae2lt.client.compat.JeiWirelessSupplyClient.registerTickListener();
     }
 
     @Override
