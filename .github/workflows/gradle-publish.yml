@@ -1,0 +1,98 @@
+name: Build AE2LT with Thunderbolt Core
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout AE2LT
+        uses: actions/checkout@v6
+
+      - name: Checkout Thunderbolt Core (1.20.1)
+        uses: actions/checkout@v6
+        with:
+          repository: AE2-Lightning-Tech-Reborn/Thunderbolt-Core-Reborn
+          ref: 1.20.1
+          path: .ci/thunderbolt-core
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+          cache: 'gradle'
+          cache-dependency-path: |
+            **/*.gradle*
+            **/gradle-wrapper.properties
+            **/gradle.properties
+            .ci/thunderbolt-core/**/*.gradle*
+            .ci/thunderbolt-core/**/gradle-wrapper.properties
+            .ci/thunderbolt-core/**/gradle.properties
+
+      - name: Read Thunderbolt dependency coordinates
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          properties = {}
+          for line in Path('gradle.properties').read_text(encoding='utf-8').splitlines():
+              line = line.strip()
+              if not line or line.startswith(('#', '!')) or '=' not in line:
+                  continue
+              key, value = line.split('=', 1)
+              properties[key.strip()] = value.strip()
+
+          version = properties['thunderbolt_version']
+          artifact = properties['thunderbolt_artifact_id']
+          if artifact != 'thunderbolt-forge-1.20.1':
+              raise SystemExit(f'Unexpected Thunderbolt artifact: {artifact}')
+          if not version or any(c not in '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-_' for c in version):
+              raise SystemExit('Invalid Thunderbolt version')
+
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as output:
+              output.write(f'THUNDERBOLT_VERSION={version}\n')
+              output.write(f'THUNDERBOLT_ARTIFACT={artifact}\n')
+          print(f'Thunderbolt dependency: com.moakiee.thunderbolt:{artifact}:{version}')
+          PY
+
+      - name: Grant execute permission
+        run: chmod +x gradlew .ci/thunderbolt-core/gradlew
+
+      # Publish the Forge-remapped jarJar distributable under AE2LT's required version.
+      # Core's publishToMavenLocal task already depends on reobfJarJar.
+      - name: Publish Thunderbolt Core to Maven Local
+        working-directory: .ci/thunderbolt-core
+        env:
+          TAG: ''
+        run: ./gradlew --no-daemon publishToMavenLocal "-Pmod_version=$THUNDERBOLT_VERSION"
+
+      - name: Verify local Thunderbolt dependency
+        shell: bash
+        run: |
+          artifact_dir="$HOME/.m2/repository/com/moakiee/thunderbolt/$THUNDERBOLT_ARTIFACT/$THUNDERBOLT_VERSION"
+          test -s "$artifact_dir/$THUNDERBOLT_ARTIFACT-$THUNDERBOLT_VERSION.pom"
+          test -s "$artifact_dir/$THUNDERBOLT_ARTIFACT-$THUNDERBOLT_VERSION.jar"
+
+      # AE2LT already declares mavenLocal(), so it resolves Core from the same runner.
+      - name: Build AE2LT with Gradle
+        run: ./gradlew --no-daemon build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ae2lt
+          path: |
+            build/libs/*.jar
+            .ci/thunderbolt-core/build/libs/*.jar
+          include-hidden-files: true
+          if-no-files-found: error
